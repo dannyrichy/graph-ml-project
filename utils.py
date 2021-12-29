@@ -2,8 +2,15 @@
 Common utility function
 """
 import math
+from operator import methodcaller
 
 import numpy as np
+
+
+def read_data(filename, header=2):
+    with open(filename, 'r') as f:
+        list_edges = list(map(lambda x: (x[0], x[1], 1), list(map(methodcaller("split", " "), f.read().splitlines()[header:]))))
+    return list_edges
 
 
 def create_alias_table(area_ratio):
