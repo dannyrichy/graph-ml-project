@@ -1,12 +1,14 @@
 import networkx as nx
 import numpy as np
-from tensorflow import keras
-from tensorflow.keras import layers
 
 from utils import AliasTable
 
 
 class LineBaseClass:
+    """
+    Line Base Class shizzzzzzzzzzzzzz
+    """
+
     def __init__(self, graph):
         """
 
@@ -17,7 +19,7 @@ class LineBaseClass:
 
         # Preparing the edge distribution
         edge_distribution = np.array([
-            attr(['weight'])
+            attr['weight']
             for _, _, attr in self.graph.edges(data=True)
         ], dtype=np.float32)
         self.edge_distribution = edge_distribution / np.sum(edge_distribution)
@@ -39,7 +41,7 @@ class LineBaseClass:
             self.node_2_ix[node] = index
             self.ix_2_node[index] = node
         self.edges = [
-            (self.node_2_ix[u], self.node_2_ix[v])
+            (self.node_2_ix[u], self.node_2_ix[v], _['weight'])
             for u, v, _ in self.graph.edges(data=True)
         ]
 
@@ -51,21 +53,25 @@ class LineBaseClass:
         :param num_negative_sample:
         :type num_negative_sample: int
         :return:
-        :rtype:
+        :rtype: dict
         """
         edge_batch = self.edge_alias_sampling.sampling(bs)
         v = {
             'v1': list(),
             'v2': list(),
+            'weight': list(),
             'label': list()
         }
 
         for edge_ix in edge_batch:
-            v1, v2 = self.graph.edges[edge_ix] if (np.random.rand() > 0.5) & isinstance(self.graph, nx.Graph) else self.graph.edges[
-                                                                                                                       edge_ix][::-1]
+            if (np.random.rand() > 0.5) & isinstance(self.graph, nx.Graph):
+                v1, v2, weight = self.edges[edge_ix]
+            else:
+                v2, v1, weight = self.edges[edge_ix]
             v['v1'].append(v1)
             v['v2'].append(v2)
-            v['label'].append(1)
+            v['weight'].append(weight)
+            v['label'].append(1.0)
 
             for i in range(num_negative_sample):
                 while True:
@@ -74,7 +80,8 @@ class LineBaseClass:
                                                self.ix_2_node[v['v2'][-1]]):
                         v['v1'].append(v['v1'][-1])
                         v['v2'].append(negative_node)
-                        v['label'].append(-1)
+                        v['weight'].append(0.0)
+                        v['label'].append(-1.0)
                         break
 
         return v
@@ -84,20 +91,3 @@ class LineBaseClass:
             node: embedding[self.node_2_ix[node]]
             for node, _ in self.graph.nodes(data=True)
         }
-
-
-def line(size, embedding_dim):
-    inputs = {
-        "target": layers.Input(name="target", shape=(), dtype="int32"),
-        "context": layers.Input(name="context", shape=(), dtype="int32"),
-    }
-    embed_item = layers.Embedding(
-        input_dim=size,
-        output_dim=embedding_dim,
-        embeddings_initializer="he_normal",
-        embeddings_regularizer=keras.regularizers.l2(1e-6),
-        name="item_embeddings",
-    )
-    target_embeddings = embed_item(inputs["target"])
-    context_embeddings = embed_item(inputs["context"])
-    
