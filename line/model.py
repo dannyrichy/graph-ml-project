@@ -9,13 +9,14 @@ class LineBaseClass:
     Line Base Class shizzzzzzzzzzzzzz
     """
 
-    def __init__(self, graph):
+    def __init__(self, graph, negative_ratio):
         """
 
         :param graph: graph nodes
         :type graph: networkx.Graph
         """
         self.graph = graph
+        self.negative_ratio = negative_ratio
 
         # Preparing the edge distribution
         edge_distribution = np.array([
@@ -45,13 +46,11 @@ class LineBaseClass:
             for u, v, _ in self.graph.edges(data=True)
         ]
 
-    def generate_batch_size(self, bs, num_negative_sample=10):
+    def generate_batch_size(self, bs):
         """
         Generate batch
         :param bs:
         :type bs: int
-        :param num_negative_sample:
-        :type num_negative_sample: int
         :return:
         :rtype: dict
         """
@@ -73,7 +72,7 @@ class LineBaseClass:
             v['weight'].append(weight)
             v['label'].append(1.0)
 
-            for i in range(num_negative_sample):
+            for i in range(self.negative_ratio):
                 while True:
                     negative_node = self.node_alias_sampling.sampling()[0]
                     if not self.graph.has_edge(self.ix_2_node[negative_node],
