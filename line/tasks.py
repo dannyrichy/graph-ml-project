@@ -95,7 +95,8 @@ class Line1(LineBaseClass):
         """
         self.model.compile(
             optimizer=keras.optimizers.Adam(),
-            loss=line_loss
+            loss=line_loss,
+            metrics=['accuracy']
         )
         logging.info("Running the iteration")
         for i in range(no_iter):
