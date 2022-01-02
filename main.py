@@ -19,25 +19,25 @@ def prepare_train_test(graph):
     :return:
     :rtype:
     """
-    edge_subset = random.sample(graph.edges(), int(0.25 * graph.number_of_edges()))
-    edge_test_subset = list(graph.edges())
-    for edge in edge_subset:
-        edge_test_subset.remove(edge)
-    train_g = graph.copy()
-    train_g = train_g.remove_edges_from(edge_subset)
-    test_g = graph.remove_edges_from(edge_test_subset)
-    return train_g, test_g
+    return random.sample([(u, v, weight['weight']) for u, v, weight in graph.edges(data=True)], int(0.25 * graph.number_of_edges()))
 
 
 if __name__ == '__main__':
     logging.info("Reading the graph data")
     edge_list = read_data("../graph-ml-project/data/out.munmun_twitter_social")
-
     graph = nx.DiGraph()
+
+    logging.info("Adding the edges")
     graph.add_weighted_edges_from(edge_list)
-    train_graph, test_graph = prepare_train_test(graph=graph)
+
+    logging.info("Preparing train test split")
+    test_set = prepare_train_test(graph=graph)
+    test_graph = nx.DiGraph()
+    test_graph.add_weighted_edges_from(test_set)
+    train_graph = graph.copy()
+    train_graph.remove_edges_from(test_set)
     logging.info("Constructed the graph")
 
-    l = Line1(graph=graph)
-    l.run(no_iter=100)
-
+    l = Line1(graph=train_graph)
+    l.run(no_iter=2)
+    l.evaluate(test_graph)

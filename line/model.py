@@ -58,7 +58,6 @@ class LineBaseClass:
         v = {
             'v1': list(),
             'v2': list(),
-            'weight': list(),
             'label': list()
         }
 
@@ -69,7 +68,6 @@ class LineBaseClass:
                 v2, v1, weight = self.edges[edge_ix]
             v['v1'].append(v1)
             v['v2'].append(v2)
-            v['weight'].append(weight)
             v['label'].append(1.0)
 
             for i in range(self.negative_ratio):
@@ -79,7 +77,6 @@ class LineBaseClass:
                                                self.ix_2_node[v['v2'][-1]]):
                         v['v1'].append(v['v1'][-1])
                         v['v2'].append(negative_node)
-                        v['weight'].append(0.0)
                         v['label'].append(-1.0)
                         break
 

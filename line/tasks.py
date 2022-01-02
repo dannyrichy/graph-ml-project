@@ -15,7 +15,7 @@ def line_loss(y_true, y_pred):
 
 
 class Line1(LineBaseClass):
-    def __init__(self, graph, batch_size=128, negative_ratio=10, embedding_dim=128):
+    def __init__(self, graph, batch_size=128, negative_ratio=5, embedding_dim=128):
         """
 
         :param graph:
@@ -105,5 +105,18 @@ class Line1(LineBaseClass):
             self.model.fit(dataset)
 
     def evaluate(self, test_graph):
-
-        self.model.evaluate()
+        v = {
+            'v1': list(),
+            'v2': list(),
+            'label': list()
+        }
+        edges = [
+            (self.node_2_ix[u], self.node_2_ix[v], _['weight'])
+            for u, v, _ in test_graph.edges(data=True)
+        ]
+        for v1, v2, w in edges:
+            v['v1'].append(int(v1))
+            v['v2'].append(v2)
+            v['label'].append(float(w))
+        test_dataset = self.dataset_gen(v['v1'], v['v2'], v['label'])
+        print(self.model.evaluate(test_dataset))
