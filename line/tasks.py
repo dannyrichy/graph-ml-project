@@ -4,17 +4,17 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
 from tensorflow.keras.models import Model
+from tensorflow.python.keras import backend as K
 
 from line.model import LineBaseClass
-
-LEARNING_RATE = 0.001
+from line.utils import V1, V2, LABEL, WEIGHT
 
 
 def line_loss(y_true, y_pred):
-    return -keras.backend.mean(keras.backend.log(keras.backend.sigmoid(y_true * y_pred)))
+    return -K.mean(K.log(K.sigmoid(y_true * y_pred)))
 
 
-class Line1(LineBaseClass):
+class Line(LineBaseClass):
     def __init__(self, graph, batch_size=128, negative_ratio=5, embedding_dim=128):
         """
 
@@ -41,7 +41,7 @@ class Line1(LineBaseClass):
         # Defining the embedding block
         logging.info("Embedding layer initialised")
         self.embed = layers.Embedding(
-            input_dim=self.graph.number_of_nodes(),
+            input_dim=self.num_nodes,
             output_dim=embedding_dim,
             embeddings_initializer="he_normal",
             embeddings_regularizer=keras.regularizers.l2(1e-6),
@@ -85,39 +85,40 @@ class Line1(LineBaseClass):
         dataset = dataset.prefetch(tf.data.AUTOTUNE)
         return dataset
 
-    def run(self, no_iter):
+    def run(self, epochs):
         """
 
-        :param no_iter:
-        :type no_iter:
+        :param epochs:
+        :type epochs:
         :return:
         :rtype:
         """
+        logging.info("Compiling a model with Adam optimizer")
         self.model.compile(
-            optimizer=keras.optimizers.Adam(),
+            optimizer='adam',
             loss=line_loss,
-            metrics=['accuracy']
+            metrics=[tf.keras.metrics.Accuracy()]
         )
-        logging.info("Running the iteration")
-        for i in range(no_iter):
-            logging.info("Iteration {}".format(i))
-            v = self.generate_batch_size(bs=self.batch_size)
-            dataset = self.dataset_gen(v['v1'], v['v2'], v['label'])
-            self.model.fit(dataset)
+
+        logging.info("Fitting the model with batch size:{}, epochs:{}".format(self.batch_size, epochs))
+        batch_gen = self.batch_size_gen(self.batch_size)
+        samples_per_epoch = self.num_edges * (1+self.negative_ratio)
+        steps_per_epoch = ((samples_per_epoch - 1) // self.batch_size + 1)
+        self.model.fit(batch_gen, epochs=epochs, steps_per_epoch=steps_per_epoch)
 
     def evaluate(self, test_graph):
         v = {
-            'v1': list(),
-            'v2': list(),
-            'label': list()
+            V1: list(),
+            V2: list(),
+            LABEL: list()
         }
         edges = [
-            (self.node_2_ix[u], self.node_2_ix[v], _['weight'])
+            (self.node_2_ix[u], self.node_2_ix[v], _[WEIGHT])
             for u, v, _ in test_graph.edges(data=True)
         ]
         for v1, v2, w in edges:
-            v['v1'].append(int(v1))
-            v['v2'].append(v2)
-            v['label'].append(float(w))
-        test_dataset = self.dataset_gen(v['v1'], v['v2'], v['label'])
+            v[V1].append(int(v1))
+            v[V2].append(v2)
+            v[LABEL].append(float(w))
+        test_dataset = self.dataset_gen(v[V1], v[V2], v[LABEL])
         print(self.model.evaluate(test_dataset))

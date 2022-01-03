@@ -3,7 +3,7 @@ import random
 
 import networkx as nx
 
-from line.tasks import Line1
+from line.tasks import Line
 from utils import read_data
 
 logging.basicConfig(
@@ -22,9 +22,9 @@ def prepare_train_test(graph):
     return random.sample([(u, v, weight['weight']) for u, v, weight in graph.edges(data=True)], int(0.25 * graph.number_of_edges()))
 
 
-if __name__ == '__main__':
+def main(file_loc="../graph-ml-project/data/out.munmun_twitter_social", n_iter=2):
     logging.info("Reading the graph data")
-    edge_list = read_data("../graph-ml-project/data/out.munmun_twitter_social")
+    edge_list = read_data(file_loc)
     graph = nx.DiGraph()
 
     logging.info("Adding the edges")
@@ -38,6 +38,8 @@ if __name__ == '__main__':
     train_graph.remove_edges_from(test_set)
     logging.info("Constructed the graph")
 
-    l = Line1(graph=train_graph)
-    l.run(no_iter=2)
+    l = Line(graph=train_graph)
+    l.run(epochs=n_iter)
     l.evaluate(test_graph)
+
+main()

@@ -1,6 +1,7 @@
 """
 Common utility function
 """
+import logging
 from operator import methodcaller
 
 import numpy as np
@@ -12,7 +13,7 @@ def read_data(filename, header=2):
     return list_edges
 
 
-class AliasTable:
+class AliasTableOld:
     """
     Class to perform alias table method for a given discrete distribution
     """
@@ -75,3 +76,59 @@ class AliasTable:
         ixs = np.floor(self.num_points * x).astype(np.int32)
         y = self.num_points * x - ixs
         return [ixs[k] if y[k] < self.q[ixs[k]] else self.j[ixs[k]] for k in range(n)]
+
+
+class AliasTable:
+    def __init__(self, prob_dist):
+        """
+
+        :param prob_dist:
+        :type prob_dist: list
+        :return:
+        :rtype:
+        """
+        logging.info("Creating Alias Table")
+        self.prob = prob_dist
+        self.len = len(self.prob)
+        self.accept = [0] * self.len
+        self.alias = [0] * self.len
+        self.create_alias_table()
+
+    def create_alias_table(self):
+        small, large = [], []
+        area_ratio_ = np.array(self.prob) * self.len
+        for i, prob in enumerate(area_ratio_):
+            if prob < 1.0:
+                small.append(i)
+            else:
+                large.append(i)
+
+        while small and large:
+            small_idx, large_idx = small.pop(), large.pop()
+            self.accept[small_idx] = area_ratio_[small_idx]
+            self.alias[small_idx] = large_idx
+            area_ratio_[large_idx] = area_ratio_[large_idx] - \
+                                     (1 - area_ratio_[small_idx])
+            if area_ratio_[large_idx] < 1.0:
+                small.append(large_idx)
+            else:
+                large.append(large_idx)
+
+        while large:
+            large_idx = large.pop()
+            self.accept[large_idx] = 1
+        while small:
+            small_idx = small.pop()
+            self.accept[small_idx] = 1
+
+    def alias_sample(self):
+        """
+        :return: sample index
+        """
+        N = len(self.accept)
+        i = int(np.random.random() * N)
+        r = np.random.random()
+        if r < self.accept[i]:
+            return i
+        else:
+            return self.alias[i]
