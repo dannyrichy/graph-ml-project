@@ -77,3 +77,6 @@ def main(file_loc="../graph-ml-project/data/out.munmun_twitter_social"):
     blog_catalog_graph.add_weighted_edges_from(edge_list)
     blog_catalog_graph = assign_labels(blog_catalog_graph, labels)
 
+
+def node2vec_link_predictor():
+    pass

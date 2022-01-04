@@ -1,15 +1,15 @@
 from gensim.models import Word2Vec
 
-from .utils import node2vec_random_walk
+from utils import node2vec_random_walk
 
 
-def model(train_graph):
+def model(train_graph, fun=node2vec_random_walk):
     node2vec_paths = []
     walks_per_node = 1
 
     for node in train_graph:
         for _ in range(walks_per_node):
-            node2vec_paths.append(node2vec_random_walk(train_graph, node, p=0.25, q=4))
+            node2vec_paths.append(fun(train_graph, node, p=0.25, q=4))
 
     # initiate a word2vec model
     model = Word2Vec(window=2, sg=1, hs=0, negative=5,
