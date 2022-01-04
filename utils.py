@@ -3,18 +3,31 @@ Common utility function
 """
 import math
 from operator import methodcaller
-
-import tensorflow.experimental.numpy as np
-
+#import tensorflow.experimental.numpy as np
+import numpy as np
 import networkx as nx
 import scipy.sparse as sp
 from sklearn.decomposition import TruncatedSVD
-import tensorflow as tf
 
-def read_BlogCatalog(filename, header=0):
+#read edges from Blog Catalog
+def read_BlogCatalog_edges(filename, header=0):
     with open(filename, 'r') as f:
-        list_edges = list(map(lambda x: (x[0], x[1], 1), list(map(methodcaller("split", ","), f.read().splitlines()[header:]))))
-    return list_edges
+        edge_list = list(map(lambda x: (x[0], x[1], 1), list(map(methodcaller("split", ","), f.read().splitlines()[header:]))))
+    return edge_list
+
+
+#read labels from Blog Catalog
+def read_BlogCatalog_labels(filename, header=0):
+    with open(filename, 'r') as f:
+        labels = list(map(lambda x: (x[0], x[1]), list(map(methodcaller("split", ","), f.read().splitlines()[header:]))))
+    return labels
+
+
+#function to assign labels to nodes 
+def assign_labels(graph, labels_list, label_name='label'):
+    for node,label in labels_list:
+        graph.nodes[node][label_name] = label
+    return graph
 
 
 def read_data(filename, header=2):
@@ -119,12 +132,12 @@ def compute_M_for_small_NetMF(graph, b, T):
     #P = D_inverse @ A
 
     #Calculating D_inverse and 
-    print("Calculating D_inverse")
+    print("calculating D_inverse ...")
     L, d_rt = sp.csgraph.laplacian(A, normed=True, return_diag=True)
     d_rt_inv = sp.diags(d_rt ** -1)
     
     #Compute sum over P_r for r = 1 to T
-    print("Calculating sum over P_r")
+    print("calculating sum over P_r ...")
     P = sp.identity(graph.number_of_nodes()) - L
     sum_P = np.zeros(P.shape)
     P_r = sp.identity(graph.number_of_nodes())
@@ -133,8 +146,8 @@ def compute_M_for_small_NetMF(graph, b, T):
         sum_P = sum_P + P_r
     
     #Compute direct M
-    print("Computing direct M")
-    M = (vol/(b*T)) *d_rt_inv.dot(d_rt_inv.dot(sum_P).T).todense()
+    print("computing direct M ...")
+    M = (vol/(b*T)) *d_rt_inv.dot(d_rt_inv.dot(sum_P).T)
     
     #Compute log M'
     M[M<=1] = 1
@@ -159,7 +172,7 @@ def compute_M_for_large_NetMF(graph, b, T, h):
     vol = float(A.sum())
     
     #Eigen-decomposition: D^{-1/2} A D^{-1/2}
-    print("Performing Eigen-decomposition: D^{-1/2} A D^{-1/2}")
+    print("performing Eigen-decomposition: D^{-1/2} A D^{-1/2} ...")
     L, d_rt = sp.csgraph.laplacian(A, normed=True, return_diag=True)
     D = sp.identity(graph.number_of_nodes()) - L
     Lambda, eigenvec = sp.linalg.eigsh(D, h)
@@ -173,8 +186,8 @@ def compute_M_for_large_NetMF(graph, b, T, h):
     Lambda = np.maximum(Lambda, 0)
     
     #Approximate M 
-    print("Computing approximate M")
-    xx = sp.diags(np.dot(np.sqrt(Lambda),D_invU.T)).T
+    print("computing approximate M ...")
+    xx = sp.diags(np.sqrt(Lambda)).dot(D_invU.T).T
     M = (vol/b) * np.dot(xx, xx.T)
     
     #Compute log M'
@@ -195,6 +208,7 @@ def create_embedding(m, d, iter):
     returns:
     embedding - embedding of graph in d-space using svd
     """
+    print("performing truncatedSVD ...")
     svd = TruncatedSVD(n_components=d, n_iter=iter, random_state=420)
     svd.fit(m)
     embedding = svd.transform(m)
@@ -217,7 +231,7 @@ def NetMF(graph, size, b, T, d, iter, h):
     NetMF_Embedding - embedding of graph in d-space
     """
     if size == "small":
-        print("Small NetMF")
+        print("Small NetMF:")
         m = compute_M_for_small_NetMF(graph, b, T)
     elif size == "large":
         print("Large NetMF")
@@ -226,7 +240,23 @@ def NetMF(graph, size, b, T, d, iter, h):
         print("size is either 'small' or 'large'")
         return
 
-    print("Creating Embedding")
     NetMF_Embedding = create_embedding(m, d, iter)
     
     return NetMF_Embedding
+
+
+#Test NetMF
+def testNetMF(size):
+    graph = nx.watts_strogatz_graph(1000, 10, 0.5)
+    embedding = NetMF(graph, size, b=1, T=3, d=2, iter=10, h=256)
+
+    assert embedding.shape[0] == graph.number_of_nodes()
+    assert embedding.shape[1] == 2
+    assert type(embedding) == np.ndarray
+
+    graph = nx.watts_strogatz_graph(1500, 10, 0.5)
+    embedding = NetMF(graph, size, b=1, T=3, d=32, iter=10, h=256)
+
+    assert embedding.shape[0] == graph.number_of_nodes()
+    assert embedding.shape[1] == 32
+    assert type(embedding) == np.ndarray
