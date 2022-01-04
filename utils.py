@@ -2,7 +2,9 @@
 Common utility function
 """
 import math
+import random
 from operator import methodcaller
+from typing import List
 
 import numpy as np
 
@@ -88,3 +90,16 @@ def alias_sampling(graph):
 
     edge_accept, edge_alias = create_alias_table(norm_prob)
     return node_accept, node_alias, edge_accept, edge_alias, node2idx
+
+
+def deepwalk_random_walk(graph, root_node, walk_length=5):
+    path: List[str] = [str(root_node)]
+
+    current_node = root_node
+    for _ in range(walk_length):
+        current_node = random.choice(list(graph.neighbors(current_node)))
+        path.append(str(current_node))
+
+    return path
+
+def node2vec_random_walk(graph, root_node, walk_length=5):
