@@ -14,13 +14,17 @@ if __name__ == '__main__':
 
     for node in graph:
         for _ in range(walks_per_node):
-            deepwalk_paths.append(deepwalk_random_walk(graph, node))
+            node2vec_paths.append(node2vec_random_walk(graph, node, p=0.25, q=4))
 
     # initiate a word2vec model
-    model = Word2Vec(window=2, sg=1, hs=1, vector_size=128, alpha=0.03, min_alpha=0.0001, seed=42)
+    model = Word2Vec(window=2, sg=1, hs=0, negative=5,
+                     vector_size=128, alpha=0.03, min_alpha=0.0001, seed=42)
 
     # build vocabulary
-    model.build_vocab(deepwalk_paths)
+    model.build_vocab(node2vec_paths)
 
     # train
-    model.train(deepwalk_paths, total_examples=model.corpus_count, epochs=2, report_delay=1)
+    model.train(node2vec_paths, total_examples=model.corpus_count,
+                epochs=2, report_delay=1)
+
+    print(model.wv['2'])
