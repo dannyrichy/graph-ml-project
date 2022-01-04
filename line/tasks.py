@@ -1,124 +1,162 @@
 import logging
+import random
+from itertools import islice
 
+import numpy as np
 import tensorflow as tf
-from tensorflow import keras
 from tensorflow.keras import layers
 from tensorflow.keras.models import Model
-from tensorflow.python.keras import backend as K
+from tensorflow.python.keras import backend as k
 
-from line.model import LineBaseClass
-from line.utils import V1, V2, LABEL, WEIGHT
-
-
-def line_loss(y_true, y_pred):
-    return -K.mean(K.log(K.sigmoid(y_true * y_pred)))
+from line import V1, V2, LABEL
+from line.utils import shuffle_det, GraphHelper
 
 
-class Line(LineBaseClass):
-    def __init__(self, graph, batch_size=128, negative_ratio=5, embedding_dim=128):
+def loss_fun(y_true, y_predicted):
+    return -k.mean(k.log(k.sigmoid(y_true * y_predicted)))
+
+
+class LinkPredict(GraphHelper):
+    def __init__(self, train_graph, batch_size=128, negative_ratio=5, embedding_dim=128):
         """
+        Class for link prediction
 
-        :param graph:
-        :type graph: networkx.Graph
-        :param batch_size:
+        :param train_graph: Graph to train on
+        :type train_graph: networkx.Graph
+
+        :param batch_size: Batch size
         :type batch_size: int
+
         :param negative_ratio: Number of negative samples to construct
         :type negative_ratio: int
-        :param embedding_dim:
+
+        :param embedding_dim: Embedding dimension
         :type embedding_dim: int
         """
         logging.info("Initialising the base class")
-        super().__init__(graph, negative_ratio)
+        super().__init__(train_graph, negative_ratio)
+
         self.batch_size = batch_size
+        self.embedding_dim = embedding_dim
 
         # Defining the input block
-        logging.info("Defining the input block")
-        self.input = {
-            "target": layers.Input(name="target", shape=(), dtype="int32"),
-            "context": layers.Input(name="context", shape=(), dtype="int32")
-        }
+        logging.info("Creating the model")
+        self.model = self._create_model()
 
-        # Defining the embedding block
-        logging.info("Embedding layer initialised")
-        self.embed = layers.Embedding(
-            input_dim=self.num_nodes,
-            output_dim=embedding_dim,
-            embeddings_initializer="he_normal",
-            embeddings_regularizer=keras.regularizers.l2(1e-6),
-            name="embeddings",
-        )
-
-        # Applying the embedding to the inputs
-        logging.info("Application of embedding layer")
-        self.embedded_input = {
-            key: self.embed(value)
-            for key, value in self.input.items()
-        }
-
-        # Defining the output block
-        logging.info("Output layer defined")
-        self.output = layers.Lambda(lambda x: tf.reduce_sum(
-            x[0] * x[1], axis=-1, keepdims=False), name='first_order')([self.embedded_input['target'], self.embedded_input['context']])
-
-        # Defining the model
-        self.model = Model(inputs=[self.input['target'], self.input['context']], outputs=[self.output])
-
-    def dataset_gen(self, targets, contexts, labels):
+    def _create_model(self):
         """
+        Creates tensorflow model
 
-        :param targets:
-        :type targets:
-        :param contexts:
-        :type contexts:
-        :param labels:
-        :type labels:
-        :return:
-        :rtype:
+        :return: model
+        :rtype: tensorflow.keras.models.Model
         """
-        inputs = {
-            "target": targets,
-            "context": contexts,
-        }
-        dataset = tf.data.Dataset.from_tensor_slices((inputs, labels))
-        dataset = dataset.shuffle(buffer_size=self.batch_size * 2)
-        dataset = dataset.batch(self.batch_size, drop_remainder=True)
-        dataset = dataset.prefetch(tf.data.AUTOTUNE)
-        return dataset
+        node1 = layers.Input(shape=(1,))
+        node2 = layers.Input(shape=(1,))
 
-    def run(self, epochs):
+        embed = layers.Embedding(self.num_nodes, self.embedding_dim, name='first_emb')
+
+        u1 = embed(node1)
+        u2 = embed(node2)
+
+        out = layers.Lambda(lambda x: tf.reduce_sum(x[0] * x[1], axis=-1, keepdims=False), name='LINE-1')([u1, u2])
+
+        return Model(inputs=[node1, node2], outputs=[out])
+
+    def run(self, epochs, opt='adam'):
         """
+        Fit the model
 
-        :param epochs:
-        :type epochs:
-        :return:
-        :rtype:
+        :param epochs: Number of epochs
+        :type epochs: int
+
+        :param opt: Optimiser to use
+        :type opt: str
+
+        :return: Nothing
+        :rtype: None
         """
         logging.info("Compiling a model with Adam optimizer")
-        self.model.compile(
-            optimizer='adam',
-            loss=line_loss,
-            metrics=[tf.keras.metrics.Accuracy()]
-        )
+        self.model.compile(opt, loss_fun,
+                           metrics=[tf.keras.metrics.Accuracy()])
 
         logging.info("Fitting the model with batch size:{}, epochs:{}".format(self.batch_size, epochs))
-        batch_gen = self.batch_size_gen(self.batch_size)
-        samples_per_epoch = self.num_edges * (1+self.negative_ratio)
-        steps_per_epoch = ((samples_per_epoch - 1) // self.batch_size + 1)
-        self.model.fit(batch_gen, epochs=epochs, steps_per_epoch=steps_per_epoch)
+        batch_gen = self._batch_size_gen(self.batch_size)
+        self.model.fit(batch_gen, epochs=epochs, steps_per_epoch=((self.num_edges * (1 + self.negative_ratio) - 1) // self.batch_size + 1))
+
+    def _batch_size_gen(self, batch_size):
+        """
+        Generator function to generate data samples
+        :return:
+        :rtype:
+        """
+        shuffle_indices = np.random.permutation(np.arange(self.num_edges))
+        batches = [(i, min(i + batch_size, self.num_edges)) for i in range(0, self.num_edges, batch_size)]
+        logging.debug("Batched indexes generated: {}".format(batches))
+        while True:
+            for batch_ixs in batches:
+                batch_data = {
+                    V1: list(),
+                    V2: list(),
+                    LABEL: list()
+                }
+                logging.debug("Preparing data sample for indexes: ({}, {})".format(*batch_ixs))
+                for i in range(*batch_ixs):
+                    if random.random() >= self.edge_alias_sampling.accept[shuffle_indices[i]]:
+                        shuffle_indices[i] = self.edge_alias_sampling.alias[shuffle_indices[i]]
+
+                    v1, v2 = self.edges[shuffle_indices[i]]
+                    batch_data[V1].append(v1)
+                    batch_data[V2].append(v2)
+                    batch_data[LABEL].append(1.0)
+
+                    for _ in range(self.negative_ratio):
+                        batch_data[V1].append(v1)
+                        batch_data[V2].append(self.node_alias_sampling.alias_sample())
+                        batch_data[LABEL].append(-1.0)
+
+                shuffled_data = {
+                    key: value
+                    for key, value in zip([V1, V2, LABEL], shuffle_det(batch_data[V1], batch_data[V2], batch_data[LABEL]))
+                }
+                mini_batches = [
+                    (i, min(i + batch_size, 6 * np.diff(batch_ixs)[0]))
+                    for i in range(0, 6 * np.diff(batch_ixs)[0], batch_size)
+                ]
+                for mini_batch_ixs in mini_batches:
+                    yield ([np.array(list(islice(shuffled_data[V1], *mini_batch_ixs))), np.array(list(islice(shuffled_data[V2], *mini_batch_ixs)))],
+                           [np.array(list(islice(shuffled_data[LABEL], *mini_batch_ixs)))])
 
     def evaluate(self, test_graph):
-        v = {
+        """
+        To evaluate the model
+        :param test_graph:
+        :type test_graph: networkx.Graph
+        :return:
+        :rtype:
+        """
+        edges_nx = test_graph.edges(data=True)
+        num_edges = test_graph.number_of_edges()
+        test_edges = [
+            (self.node_2_ix[u], self.node_2_ix[v])
+            for u, v, _ in edges_nx
+        ]
+        data = {
             V1: list(),
             V2: list(),
             LABEL: list()
         }
-        edges = [
-            (self.node_2_ix[u], self.node_2_ix[v], _[WEIGHT])
-            for u, v, _ in test_graph.edges(data=True)
-        ]
-        for v1, v2, w in edges:
-            v[V1].append(int(v1))
-            v[V2].append(v2)
-            v[LABEL].append(float(w))
-        test_dataset = self.dataset_gen(v[V1], v[V2], v[LABEL])
-        print(self.model.evaluate(test_dataset))
+        for i in range(num_edges):
+            v1, v2 = test_edges[i]
+            data[V1].append(v1)
+            data[V2].append(v2)
+            data[LABEL].append(1.0)
+
+            for _ in range(self.negative_ratio):
+                data[V1].append(v1)
+                while True:
+                    v3 = self.node_alias_sampling.alias_sample()
+                    if v3 != v2:
+                        break
+                data[V2].append(v3)
+                data[LABEL].append(-1.0)
+        print(self.model.evaluate(x=[np.array(data[V1]), np.array(data[V1])], y=[np.array(data[LABEL])]))
