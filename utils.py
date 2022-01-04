@@ -11,6 +11,11 @@ import scipy.sparse as sp
 from sklearn.decomposition import TruncatedSVD
 import tensorflow as tf
 
+def read_BlogCatalog(filename, header=0):
+    with open(filename, 'r') as f:
+        list_edges = list(map(lambda x: (x[0], x[1], 1), list(map(methodcaller("split", ","), f.read().splitlines()[header:]))))
+    return list_edges
+
 
 def read_data(filename, header=2):
     with open(filename, 'r') as f:
