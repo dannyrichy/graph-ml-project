@@ -64,7 +64,7 @@ class Line(GraphHelper):
 
     def compile_model(self):
         logging.info("Compiling a model with Adam optimizer")
-        self.model.compile(optimizer=tf.keras.optimizers.SGD(learning_rate=MyLRSchedule(initial_learning_rate=0.025, max_t=10)),
+        self.model.compile(optimizer=tf.keras.optimizers.SGD(learning_rate=MyLRSchedule(initial_learning_rate=0.025, max_t=1e10)),
                            loss=loss_fun,
                            metrics=[tf.keras.metrics.Accuracy()])
 
@@ -184,3 +184,4 @@ class Line(GraphHelper):
         :rtype: numpy.ndarray
         """
         return self.embed.get_weights()[0][node_ix]
+
