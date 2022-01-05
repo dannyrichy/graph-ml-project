@@ -16,8 +16,8 @@ def assign_labels_to_graph(graph, labels_list, label_name='label'):
 
 # function to get labels of embedding based on nodelist order
 def get_labels(nodelist, labels_list):
-    mapping = dict(labels)
-    y = [mapping[x] for x in blog_catalog_graph.nodes()]
+    mapping = dict(labels_list)
+    y = [mapping[x] for x in nodelist]
     return y
 
 
@@ -47,6 +47,14 @@ def read_cora_edges(filename, header=0):
     with open(filename, 'r') as f:
         edge_list = list(map(lambda x: (x[0], x[1], 1), list(map(methodcaller("split", '\t'), f.read().splitlines()[header:]))))
     return edge_list
+
+
+# read labels from Blog Catalog
+def read_pub_med_edges(filename, header=0):
+    with open(filename, 'r') as f:
+        edge_list = list(map(lambda x: (x[1][6:], x[3][6:], 1), list(map(methodcaller("split", '\t'), f.read().splitlines()[header:]))))
+    return edge_list
+
 
 class AliasTable:
     def __init__(self, prob_dist):
