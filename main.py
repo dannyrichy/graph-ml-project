@@ -49,9 +49,9 @@ def line_predictor(train_graph, test_graph, n_iter=20, batch_size=1024):
     l.evaluate(test_graph)
 
 
-def netmf_node_classification(graph, labels, b, T, win_size="small"):
+def netmf_node_classification(graph, labels_dict, b, T, win_size="small"):
     X = NetMF(graph, win_size, b=b, T=T, d=2, iter=10, h=256)
-    y = get_labels(graph.nodes(), labels)
+    y = get_labels(graph.nodes(), labels_dict)
 
     classifer = LogisticRegression(multi_class='ovr', random_state=420)
     cv = cross_validate(classifer, X, y, scoring=('accuracy', 'f1_micro', 'f1_macro'))
