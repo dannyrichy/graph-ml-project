@@ -50,7 +50,7 @@ def read_cora_edges(filename, header=0):
 
 
 # read labels from Blog Catalog
-def read_pub_med_edges(filename, header=0):
+def read_pub_med_edges(filename, header=2):
     with open(filename, 'r') as f:
         edge_list = list(map(lambda x: (x[1][6:], x[3][6:], 1), list(map(methodcaller("split", '\t'), f.read().splitlines()[header:]))))
     return edge_list
