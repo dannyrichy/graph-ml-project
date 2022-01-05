@@ -84,13 +84,13 @@ def line_classification(graph, labels_dict, num_classes, n_iter=20, embedding_di
     )
 
 
-def netmf_node_classification(graph, labels, b, T, win_size="small"):
+def netmf_node_classification(graph, labels_dict, b, T, win_size="small"):
     """
 
     :param graph:
     :type graph:
-    :param labels:
-    :type labels:
+    :param labels_dict:
+    :type labels_dict:
     :param b:
     :type b:
     :param T:
@@ -101,7 +101,7 @@ def netmf_node_classification(graph, labels, b, T, win_size="small"):
     :rtype:
     """
     X = NetMF(graph, win_size, b=b, T=T, d=2, iter=10, h=256)
-    y = get_labels(graph.nodes(), labels)
+    y = get_labels(graph.nodes(), labels_dict)
 
     classifer = LogisticRegression(multi_class='ovr', random_state=420)
     cv = cross_validate(classifer, X, y, scoring=('accuracy', 'f1_micro', 'f1_macro'))
