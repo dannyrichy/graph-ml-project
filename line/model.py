@@ -9,7 +9,7 @@ from tensorflow.keras.models import Model
 from tensorflow.python.keras import backend as k
 
 from line import V1, V2, LABEL
-from line.utils import shuffle_det, GraphHelper
+from line.utils import shuffle_det, GraphHelper, MyLRSchedule
 
 
 def loss_fun(y_true, y_predicted):
@@ -62,22 +62,23 @@ class Line(GraphHelper):
 
         return Model(inputs=[node1, node2], outputs=[out]), embed
 
-    def run(self, epochs, opt='adam'):
+    def compile_model(self):
+        logging.info("Compiling a model with Adam optimizer")
+        self.model.compile(optimizer=tf.keras.optimizers.SGD(learning_rate=MyLRSchedule(initial_learning_rate=0.025, max_t=10)),
+                           loss=loss_fun,
+                           metrics=[tf.keras.metrics.Accuracy()])
+
+    def run(self, epochs, ):
         """
         Fit the model
 
         :param epochs: Number of epochs
         :type epochs: int
 
-        :param opt: Optimiser to use
-        :type opt: str
-
         :return: Nothing
         :rtype: None
         """
-        logging.info("Compiling a model with Adam optimizer")
-        self.model.compile(opt, loss_fun,
-                           metrics=[tf.keras.metrics.Accuracy()])
+        self.compile_model()
 
         logging.info("Fitting the model with batch size:{}, epochs:{}".format(self.batch_size, epochs))
         batch_gen = self._batch_size_gen(self.batch_size)

@@ -42,6 +42,12 @@ def read_twitter_edges(filename, header=2):
     return list_edges
 
 
+# read labels from Blog Catalog
+def read_cora_edges(filename, header=0):
+    with open(filename, 'r') as f:
+        edge_list = list(map(lambda x: (x[0], x[1], 1), list(map(methodcaller("split", '\t'), f.read().splitlines()[header:]))))
+    return edge_list
+
 class AliasTable:
     def __init__(self, prob_dist):
         """
