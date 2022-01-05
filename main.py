@@ -49,14 +49,20 @@ def line_predictor(train_graph, test_graph, n_iter=20, batch_size=1024):
     l.evaluate(test_graph)
 
 
-def netmf_node_classification(graph, labels, b, T, win_size="small"):
-    X = NetMF(graph, win_size, b=b, T=T, d=2, iter=10, h=256)
+def netmf_node_classification(graph, labels, b, T, win_size="small", random_state=420):
+    X = NetMF(graph, win_size, b=b, T=T, d=128, iter=10, h=256)
     y = get_labels(graph.nodes(), labels)
+    
+    print("NetMF Node Classification")
+    classifer = LogisticRegression(multi_class='ovr', solver='sag', max_iter=300, n_jobs=-1, random_state=random_state)
+    cv = cross_validate(classifer, X, y, scoring=('f1_micro','f1_macro'))
 
-    classifer = LogisticRegression(multi_class='ovr', random_state=420)
-    cv = cross_validate(classifer, X, y, scoring=('accuracy', 'f1_micro', 'f1_macro'))
+    print(cv)
 
-    return cv
+    mean_f1_micro = sum(cv['test_f1_micro'])/len(cv['test_f1_micro'])
+    mean_f1_marco = sum(cv['test_f1_macro'])/len(cv['test_f1_macro'])
+    
+    return mean_f1_micro, mean_f1_marco
 
 
 def main(file_loc="../graph-ml-project/data/out.munmun_twitter_social"):
