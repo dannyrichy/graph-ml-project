@@ -3,7 +3,7 @@ import random
 
 import networkx as nx
 
-from line.model import LinkPredict
+from line.model import Line
 from netmf.model import NetMF
 from utils import read_twitter_edges, read_blog_catalog_edges, read_blog_catalog_labels, assign_labels
 
@@ -42,7 +42,7 @@ def line_predictor(train_graph, test_graph, n_iter=20, batch_size=1024):
     :return:
     :rtype: None
     """
-    l = LinkPredict(train_graph=train_graph, batch_size=batch_size)
+    l = Line(train_graph=train_graph, batch_size=batch_size)
     l.run(epochs=n_iter)
     l.evaluate(test_graph)
 
