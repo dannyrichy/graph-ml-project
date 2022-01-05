@@ -6,11 +6,18 @@ from operator import methodcaller
 import numpy as np
 
 
-# function to assign labels to nodes
-def assign_labels(graph, labels_list, label_name='label'):
+# function to assign labels to graph nodes
+def assign_labels_to_graph(graph, labels_list, label_name='label'):
     for node, label in labels_list:
         graph.nodes[node][label_name] = label
     return graph
+
+
+# function to get labels of embedding based on nodelist order
+def get_labels(nodelist, labels_list):
+    mapping = dict(labels)
+    y = [mapping[x] for x in blog_catalog_graph.nodes()]
+    return y
 
 
 # read edges from Blog Catalog
