@@ -2,6 +2,7 @@ import logging
 import random
 
 import numpy as np
+import tensorflow as tf
 
 from line import WEIGHT
 from utils import AliasTable
@@ -78,3 +79,13 @@ class GraphHelper:
             0.75)
         node_distribution = node_distribution / np.sum(node_distribution)
         self.node_alias_sampling = AliasTable(prob_dist=node_distribution)
+
+
+class MyLRSchedule(tf.keras.optimizers.schedules.LearningRateSchedule):
+
+    def __init__(self, initial_learning_rate, max_t):
+        self.initial_learning_rate = initial_learning_rate
+        self.max_t = max_t
+
+    def __call__(self, step):
+        return self.initial_learning_rate * (1 - step / self.max_t)

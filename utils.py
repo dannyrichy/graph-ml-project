@@ -1,6 +1,7 @@
 """
 Common utility functions
 """
+import random
 from operator import methodcaller
 
 import numpy as np
@@ -40,6 +41,12 @@ def read_twitter_edges(filename, header=2):
         list_edges = list(map(lambda x: (x[0], x[1], 1), list(map(methodcaller("split", " "), f.read().splitlines()[header:]))))
     return list_edges
 
+
+# read labels from Blog Catalog
+def read_cora_edges(filename, header=0):
+    with open(filename, 'r') as f:
+        edge_list = list(map(lambda x: (x[0], x[1], 1), list(map(methodcaller("split", '\t'), f.read().splitlines()[header:]))))
+    return edge_list
 
 class AliasTable:
     def __init__(self, prob_dist):
@@ -98,3 +105,42 @@ class AliasTable:
         """
         i = int(np.random.random() * self.num_pts)
         return i if np.random.random() < self.accept[i] else self.alias[i]
+
+
+def get_nodes(list_edges):
+    """
+    Returns set of nodes
+    :param list_edges: list of edges as tuples
+    :type list_edges: list
+    :return: set
+    :rtype: set
+    """
+    nodes_set = set()
+    for edge in list_edges:
+        nodes_set.add(edge[0])
+        nodes_set.add(edge[1])
+    return nodes_set
+
+
+def train_test_split(list_edges, train_frac=0.5):
+    """
+    Splits the edges into train and test
+    :param list_edges: list of tuple containing the edges
+    :type list_edges: list
+
+    :param train_frac: train fraction
+    :type train_frac: float
+
+    :return: Tuple of train and test sets
+    :rtype: (list, lilst)
+    """
+    num_edges = int(np.ceil(len(list_edges) * train_frac))
+    while True:
+        random.shuffle(list_edges)
+        train_set, test_set = list_edges[:num_edges], list_edges[num_edges:]
+        train_nodes = get_nodes(train_set)
+        test_nodes = get_nodes(test_set)
+        if len(test_nodes.difference(train_nodes)) == 0:
+            break
+
+    return list(train_set), list(test_set)
