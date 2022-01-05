@@ -15,9 +15,8 @@ def assign_labels_to_graph(graph, labels_list, label_name='label'):
 
 
 # function to get labels of embedding based on nodelist order
-def get_labels(nodelist, labels_list):
-    mapping = dict(labels_list)
-    y = [mapping[x] for x in nodelist]
+def get_labels(nodelist, labels_dict):
+    y = [labels_dict[x] for x in nodelist]
     return y
 
 
@@ -31,7 +30,7 @@ def read_blog_catalog_edges(filename, header=0):
 # read labels from Blog Catalog
 def read_blog_catalog_labels(filename, header=0):
     with open(filename, 'r') as f:
-        labels = list(map(lambda x: (x[0], x[1]), list(map(methodcaller("split", ","), f.read().splitlines()[header:]))))
+        labels = dict(map(lambda x: (x[0], x[1]), list(map(methodcaller("split", ","), f.read().splitlines()[header:]))))
     return labels
 
 
