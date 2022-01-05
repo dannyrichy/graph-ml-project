@@ -2,11 +2,8 @@
 Common utility functions
 """
 from operator import methodcaller
-import numpy as np
-import networkx as nx
-import scipy.sparse as sp
-from sklearn.decomposition import TruncatedSVD
 
+import numpy as np
 
 
 # function to assign labels to graph nodes
@@ -42,7 +39,6 @@ def read_twitter_edges(filename, header=2):
     with open(filename, 'r') as f:
         list_edges = list(map(lambda x: (x[0], x[1], 1), list(map(methodcaller("split", " "), f.read().splitlines()[header:]))))
     return list_edges
-
 
 
 class AliasTable:
