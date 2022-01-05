@@ -3,10 +3,10 @@ import random
 
 import networkx as nx
 
+from line.model import Line
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import cross_validate
 
-from line.model import LinkPredict
 from netmf.model import NetMF
 from utils import read_twitter_edges, read_blog_catalog_edges, read_blog_catalog_labels, assign_labels_to_graph, get_labels 
 
@@ -45,7 +45,7 @@ def line_predictor(train_graph, test_graph, n_iter=20, batch_size=1024):
     :return:
     :rtype: None
     """
-    l = LinkPredict(train_graph=train_graph, batch_size=batch_size)
+    l = Line(train_graph=train_graph, batch_size=batch_size)
     l.run(epochs=n_iter)
     l.evaluate(test_graph)
 
@@ -63,20 +63,20 @@ def netmf_node_classification(graph, labels, b, T, win_size="small"):
 def main(file_loc="../graph-ml-project/data/out.munmun_twitter_social"):
     # Twitter data
     logging.info("Reading the graph data")
-    edge_list = read_twitter_edges(file_loc)
-    graph = nx.DiGraph()
-
-    logging.info("Adding the edges")
-    graph.add_weighted_edges_from(edge_list)
-
-    logging.info("Preparing train test split")
-    test_set = prepare_train_test(graph=graph)
-    test_graph = nx.DiGraph()
-    test_graph.add_weighted_edges_from(test_set)
-    train_graph = graph.copy()
-    train_graph.remove_edges_from(test_set)
-    del graph
-    logging.info("Constructed the graph")
+    # edge_list = read_twitter_edges(file_loc)
+    # graph = nx.DiGraph()
+    #
+    # logging.info("Adding the edges")
+    # graph.add_weighted_edges_from(edge_list)
+    #
+    # logging.info("Preparing train test split")
+    # test_set = prepare_train_test(graph=graph)
+    # test_graph = nx.DiGraph()
+    # test_graph.add_weighted_edges_from(test_set)
+    # train_graph = graph.copy()
+    # train_graph.remove_edges_from(test_set)
+    # del graph
+    # logging.info("Constructed the graph")
 
     # BlogCatalog
     edge_list = read_blog_catalog_edges("/content/soc-BlogCatalog-ASU.edges")
