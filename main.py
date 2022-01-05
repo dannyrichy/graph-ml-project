@@ -62,6 +62,8 @@ def line_classification(graph, labels_dict, num_classes, n_iter=20, embedding_di
     :type num_classes:
     :param n_iter:
     :type n_iter:
+    :param embedding_dim:
+    :type embedding_dim:
     :param batch_size:
     :type batch_size:
     :return:

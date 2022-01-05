@@ -55,6 +55,12 @@ def read_pub_med_edges(filename, header=2):
     return edge_list
 
 
+def read_pub_med_labels(filename, header=0):
+    with open(filename, 'r') as f:
+        labels = dict(map(lambda x: (x[0], x[1][6]), list(map(methodcaller("split", '\t'), f.read().splitlines()[header:]))))
+    return labels
+
+
 class AliasTable:
     def __init__(self, prob_dist):
         """
