@@ -8,6 +8,10 @@ import numpy as np
 
 
 # function to assign labels to graph nodes
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import cross_validate
+
+
 def assign_labels_to_graph(graph, labels_list, label_name='label'):
     for node, label in labels_list:
         graph.nodes[node][label_name] = label
@@ -157,3 +161,11 @@ def train_test_split(list_edges, train_frac=0.5):
             break
 
     return list(train_set), list(test_set)
+
+
+# Logistic Regression - Node Classifer
+def node_classifier(X, y):
+    classifer = LogisticRegression(multi_class='ovr', solver='sag', n_jobs=-1, random_state=42)
+    cv = cross_validate(classifer, X, y, scoring=('f1_micro', 'f1_macro'))
+    print(cv)
+    return cv['test_f1_micro'].mean(), cv['test_f1_macro'].mean()

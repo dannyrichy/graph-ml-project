@@ -2,13 +2,10 @@ import logging
 import random
 
 import networkx as nx
-from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import cross_validate
 
-from classfication import classification
 from line.model import Line
 from netmf.model import NetMF
-from utils import read_blog_catalog_edges, read_blog_catalog_labels, get_labels
+from utils import read_blog_catalog_edges, read_blog_catalog_labels, get_labels, node_classifier
 
 logging.basicConfig(
     format='%(process)d-%(levelname)s-%(message)s',
@@ -48,7 +45,7 @@ def line_predictor(train_graph, test_graph, n_iter=20, batch_size=1024):
     l = Line(train_graph=train_graph, batch_size=batch_size)
     l.run(epochs=n_iter)
     l.evaluate(test_graph)
-    
+
 
 def line_classification(graph, labels_dict, num_classes, n_iter=20, embedding_dim=128, batch_size=1024):
     """
@@ -77,29 +74,15 @@ def line_classification(graph, labels_dict, num_classes, n_iter=20, embedding_di
     for node in embeddings.keys():
         embed_list.append(embeddings[node])
         label_list.append(labels_dict[node])
-    classification(
-        embeddings=embed_list,
-        labels=label_list,
-        batch_size=batch_size,
-        embedding_dim=embedding_dim,
-        num_classes=num_classes
-    )
+    print(node_classifier(embed_list, label_list))
 
 
 # Function for Node Classification using NetMF
 def netmf_node_classification(graph, labels, b, T, d=128, h=256, win_size="small"):
     X = NetMF(graph, win_size, b=b, T=T, d=d, iter=10, h=h)
-    y = get_labels(graph.nodes(), labels) 
+    y = get_labels(graph.nodes(), labels)
 
     return node_classifier(X, y)
-
-
-# Logistic Regression - Node Classifer
-def node_classifier(X, y):
-    classifer = LogisticRegression(multi_class='ovr', solver='sag', n_jobs=-1, random_state=42)
-    cv = cross_validate(classifer, X, y, scoring=('f1_micro','f1_macro'))
-    print(cv)
-    return cv['test_f1_micro'].mean(), cv['test_f1_macro'].mean()
 
 
 def main(file_loc="../graph-ml-project/data/out.munmun_twitter_social"):
@@ -139,13 +122,12 @@ def main(file_loc="../graph-ml-project/data/out.munmun_twitter_social"):
     pub_graph = nx.Graph()
     pub_graph.add_weighted_edges_from(pub_edge_list)
 
-    
-    # NetMF NODE CLASSIFICATION 
+    # NetMF NODE CLASSIFICATION
     # PubMed Large NetMF
-    netmf_node_classification(pub_graph, pub_labels, b=1, T=10, win_size="large")  
+    netmf_node_classification(pub_graph, pub_labels, b=1, T=10, win_size="large")
     # PubMed Small NetMF
     netmf_node_classification(pub_graph, pub_labels, b=1, T=1, win_size="small")
-    
+
     # Blog Catalog Large NetMF
     netmf_node_classification(blog_graph, blog_labels, b=1, T=10, win_size="large")
     # Blog Catalog Small NetMF
