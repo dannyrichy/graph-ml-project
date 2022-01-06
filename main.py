@@ -5,7 +5,7 @@ import networkx as nx
 
 from line.model import Line
 from netmf.model import NetMF
-from utils import read_blog_catalog_edges, read_blog_catalog_labels, get_labels, node_classifier, read_pub_med_edges, read_pub_med_labels
+from utils import read_soc_edges, read_soc_labels, get_labels, node_classifier, read_pub_med_edges, read_pub_med_labels
 
 logging.basicConfig(
     format='%(process)d-%(levelname)s-%(message)s',
@@ -84,26 +84,39 @@ def netmf_node_classification(graph, labels, b, T, d=128, h=256, win_size="small
     return node_classifier(X, y)
 
 
-def main(file_loc="../graph-ml-project/data/out.munmun_twitter_social"):
+def main():
     """
 
-    :param file_loc:
-    :type file_loc:
+    :param:
+    :type:
     :return:
     :rtype:
     """
 
     # BlogCatalog
-    blog_edge_list = read_blog_catalog_edges("/content/soc-BlogCatalog-ASU.edges")
-    blog_labels = read_blog_catalog_labels("/content/soc-BlogCatalog-ASU.node_labels")
+    blog_edge_list = read_soc_edges("/content/soc-BlogCatalog-ASU.edges")
+    blog_labels = read_soc_labels("/content/soc-BlogCatalog-ASU.node_labels")
     blog_graph = nx.Graph()
     blog_graph.add_weighted_edges_from(blog_edge_list)
 
     # PubMed
-    pub_edge_list = read_pub_med_edges("/content/Pubmed-Diabetes.DIRECTED.cites.tab", 2)
-    pub_labels = read_pub_med_labels("/content/Pubmed-Diabetes.NODE.paper.tab", 2)
+    pub_edge_list = read_pub_med_edges("/content/Pubmed-Diabetes.DIRECTED.cites.tab")
+    pub_labels = read_pub_med_labels("/content/Pubmed-Diabetes.NODE.paper.tab")
     pub_graph = nx.Graph()
     pub_graph.add_weighted_edges_from(pub_edge_list)
+
+    # Flickr
+    flickr_edge_list = read_soc_edges("/content/drive/MyDrive/soc-Flickr-ASU.edges")
+    flickr_labels = read_soc_labels("/content/drive/MyDrive/soc-Flickr-ASU.node_labels")
+    flickr_graph = nx.Graph()
+    flickr_graph.add_weighted_edges_from(flickr_edge_list)
+
+    # Youtube
+    youtube_edge_list = read_soc_edges("/content/drive/MyDrive/soc-YouTube-ASU.edges")
+    youtube_labels = read_soc_labels("/content/drive/MyDrive/soc-YouTube-ASU.node_labels")
+    youtube_graph = nx.Graph()
+    youtube_graph.add_weighted_edges_from(flickr_edge_list)
+    
 
     # NetMF NODE CLASSIFICATION
     # PubMed Large NetMF
@@ -115,5 +128,15 @@ def main(file_loc="../graph-ml-project/data/out.munmun_twitter_social"):
     netmf_node_classification(blog_graph, blog_labels, b=1, T=10, win_size="large")
     # Blog Catalog Small NetMF
     netmf_node_classification(blog_graph, blog_labels, b=1, T=1, win_size="small")
-
+    # Blog Catalog LINE
     line_classification(blog_graph, blog_labels)
+
+    # Youtube Small NetMF
+    netmf_node_classification(youtube_graph, youtube_labels, b=1, T=1)
+    # Youtube Line
+    line_classification(youtube_graph, youtube_labels)
+
+    # Flickr Small NetMF
+    netmf_node_classification(flickr_graph, flickr_labels, b=1, T=1, h=16389)
+    # Flickr Line
+    line_classification(flickr_graph, flickr_labels)
