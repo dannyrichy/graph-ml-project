@@ -5,6 +5,7 @@ import networkx as nx
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import cross_validate
 
+from classfication import classification
 from line.model import Line
 from netmf.model import NetMF
 from utils import read_blog_catalog_edges, read_blog_catalog_labels, get_labels
@@ -47,11 +48,62 @@ def line_predictor(train_graph, test_graph, n_iter=20, batch_size=1024):
     l = Line(train_graph=train_graph, batch_size=batch_size)
     l.run(epochs=n_iter)
     l.evaluate(test_graph)
+    
+
+def line_classification(graph, labels_dict, num_classes, n_iter=20, embedding_dim=128, batch_size=1024):
+    """
 
 
-def netmf_node_classification(graph, labels, b, T, win_size="small", random_state=420):
-    X = NetMF(graph, win_size, b=b, T=T, d=128, iter=10, h=256)
-    y = get_labels(graph.nodes(), labels)
+    :param graph:
+    :type graph:
+    :param labels_dict:
+    :type labels_dict: dict
+    :param num_classes:
+    :type num_classes:
+    :param n_iter:
+    :type n_iter:
+    :param embedding_dim:
+    :type embedding_dim:
+    :param batch_size:
+    :type batch_size:
+    :return:
+    :rtype:
+    """
+    line_class = Line(train_graph=graph, batch_size=batch_size, embedding_dim=embedding_dim)
+    line_class.run(n_iter)
+    embeddings = line_class.fetch_embedding_as_dict()
+    embed_list = list()
+    label_list = list()
+    for node in embeddings.keys():
+        embed_list.append(embeddings[node])
+        label_list.append(labels_dict[node])
+    classification(
+        embeddings=embed_list,
+        labels=label_list,
+        batch_size=batch_size,
+        embedding_dim=embedding_dim,
+        num_classes=num_classes
+    )
+
+
+def netmf_node_classification(graph, labels_dict, b, T, win_size="small", random_state=420):
+    """
+
+    :param graph:
+    :type graph:
+    :param labels_dict:
+    :type labels_dict:
+    :param b:
+    :type b:
+    :param T:
+    :type T:
+    :param win_size:
+    :type win_size:
+    :return:
+    :rtype:
+    """
+    X = NetMF(graph, win_size, b=b, T=T, d=2, iter=10, h=256)
+    y = get_labels(graph.nodes(), labels_dict)
     
     print("NetMF Node Classification")
     classifer = LogisticRegression(multi_class='ovr', solver='sag', max_iter=300, n_jobs=-1, random_state=random_state)
@@ -66,6 +118,13 @@ def netmf_node_classification(graph, labels, b, T, win_size="small", random_stat
 
 
 def main(file_loc="../graph-ml-project/data/out.munmun_twitter_social"):
+    """
+
+    :param file_loc:
+    :type file_loc:
+    :return:
+    :rtype:
+    """
     # Twitter data
     logging.info("Reading the graph data")
     # edge_list = read_twitter_edges(file_loc)
