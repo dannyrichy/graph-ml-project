@@ -5,7 +5,7 @@ import networkx as nx
 
 from line.model import Line
 from netmf.model import NetMF
-from utils import read_soc_edges, read_soc_labels, get_labels, node_classifier, read_pub_med_edges, read_pub_med_labels
+from utils import read_soc_edges, read_soc_labels, get_labels, node_classifier, read_pub_med_edges, read_pub_med_labels, read_cora_edges, read_cora_labels
 
 logging.basicConfig(
     format='%(process)d-%(levelname)s-%(message)s',
@@ -117,6 +117,12 @@ def main():
     youtube_graph = nx.Graph()
     youtube_graph.add_weighted_edges_from(flickr_edge_list)
     
+    # Cora
+    cora_edge_list = read_cora_edges("/content/drive/MyDrive/out.subelj_cora_cora")
+    cora_labels = read_cora_labels("/content/drive/MyDrive/ent.subelj_cora_cora.class.name")
+    cora_graph = nx.Graph()
+    cora_graph.add_weighted_edges_from(cora_edge_list)
+    
 
     # NetMF NODE CLASSIFICATION
     # PubMed Large NetMF
@@ -140,3 +146,9 @@ def main():
     netmf_node_classification(flickr_graph, flickr_labels, b=1, T=1, h=16389)
     # Flickr Line
     line_classification(flickr_graph, flickr_labels)
+    
+    # Cora Line
+    line_classification(cora_graph, cora_labels)
+    
+    # Cora Small NetMF
+    netmf_node_classification(cora_graph, cora_labels, b=1, T=1)
