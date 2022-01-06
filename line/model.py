@@ -9,7 +9,7 @@ from tensorflow.keras.models import Model
 from tensorflow.python.keras import backend as k
 
 from line import V1, V2, LABEL
-from line.utils import shuffle_det, GraphHelper, MyLRSchedule
+from line.utils import shuffle_det, GraphHelper
 
 
 def loss_fun(y_true, y_predicted):
@@ -184,4 +184,3 @@ class Line(GraphHelper):
         :rtype: numpy.ndarray
         """
         return self.embed.get_weights()[0][node_ix]
-
