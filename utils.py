@@ -64,7 +64,7 @@ def read_facebook_edges(filename):
     return edge_list
 
 
-# read edges facebook
+# read labels facebook
 def read_facebook_labels(filename):
     with open(filename, 'r', encoding="utf8") as f:
         labels = dict([(x[0], x[3]) for x in csv.reader(f)][1:])
@@ -72,9 +72,9 @@ def read_facebook_labels(filename):
 
 
 # Logistic Regression - Node Classifer
-def node_classifier(X, y):
-    classifer = LogisticRegression(multi_class='ovr', solver='sag', n_jobs=-1, random_state=42)
-    cv = cross_validate(classifer, X, y, scoring=('f1_micro', 'f1_macro'))
+def node_classifier(x, y):
+    classifier = LogisticRegression(multi_class='ovr', solver='sag', n_jobs=-1, random_state=42)
+    cv = cross_validate(classifier, x, y, scoring=('f1_micro', 'f1_macro'))
     print(cv)
     return cv['test_f1_micro'].mean(), cv['test_f1_macro'].mean()
 
