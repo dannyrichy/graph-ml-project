@@ -27,7 +27,7 @@ def classification(embeddings, labels, batch_size=1024, embedding_dim=128, num_c
 
     optimizer = tf.optimizers.SGD(0.01)
 
-    for step, (batch_x, batch_y) in enumerate(train_data.take(1024), 1):
+    for step, (batch_x, batch_y) in enumerate(train_data, 1):
         with tf.GradientTape() as g:
             pred = logistic_regression(batch_x, W, b)
             loss = cross_entropy(pred, batch_y, num_classes)
