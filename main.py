@@ -86,35 +86,20 @@ def line_classification(graph, labels_dict, num_classes, n_iter=20, embedding_di
     )
 
 
-def netmf_node_classification(graph, labels_dict, b, T, win_size="small", random_state=420):
-    """
+# Function for Node Classification using NetMF
+def netmf_node_classification(graph, labels, b, T, d=128, h=256, win_size="small"):
+    X = NetMF(graph, win_size, b=b, T=T, d=d, iter=10, h=h)
+    y = get_labels(graph.nodes(), labels) 
 
-    :param graph:
-    :type graph:
-    :param labels_dict:
-    :type labels_dict:
-    :param b:
-    :type b:
-    :param T:
-    :type T:
-    :param win_size:
-    :type win_size:
-    :return:
-    :rtype:
-    """
-    X = NetMF(graph, win_size, b=b, T=T, d=2, iter=10, h=256)
-    y = get_labels(graph.nodes(), labels_dict)
-    
-    print("NetMF Node Classification")
-    classifer = LogisticRegression(multi_class='ovr', solver='sag', max_iter=300, n_jobs=-1, random_state=random_state)
+    return node_classifier(X, y)
+
+
+# Logistic Regression - Node Classifer
+def node_classifier(X, y):
+    classifer = LogisticRegression(multi_class='ovr', solver='sag', n_jobs=-1, random_state=42)
     cv = cross_validate(classifer, X, y, scoring=('f1_micro','f1_macro'))
-
     print(cv)
-
-    mean_f1_micro = sum(cv['test_f1_micro'])/len(cv['test_f1_micro'])
-    mean_f1_marco = sum(cv['test_f1_macro'])/len(cv['test_f1_macro'])
-    
-    return mean_f1_micro, mean_f1_marco
+    return cv['test_f1_micro'].mean(), cv['test_f1_macro'].mean()
 
 
 def main(file_loc="../graph-ml-project/data/out.munmun_twitter_social"):
@@ -143,10 +128,25 @@ def main(file_loc="../graph-ml-project/data/out.munmun_twitter_social"):
     # logging.info("Constructed the graph")
 
     # BlogCatalog
-    edge_list = read_blog_catalog_edges("/content/soc-BlogCatalog-ASU.edges")
+    blog_edge_list = read_blog_catalog_edges("/content/soc-BlogCatalog-ASU.edges")
     blog_labels = read_blog_catalog_labels("/content/soc-BlogCatalog-ASU.node_labels")
-    blog_catalog_graph = nx.Graph()
-    blog_catalog_graph.add_weighted_edges_from(edge_list)
-    # blog_catalog_graph = assign_labels_to_graph(blog_catalog_graph, blog_labels)
+    blog_graph = nx.Graph()
+    blog_graph.add_weighted_edges_from(blog_edge_list)
 
-    netmf_node_classification(blog_catalog_graph, blog_labels, b=1, T=3, win_size="small")
+    # PubMed
+    pub_edge_list = read_pub_med_edges("/content/Pubmed-Diabetes.DIRECTED.cites.tab", 2)
+    pub_labels = read_pub_med_labels("/content/Pubmed-Diabetes.NODE.paper.tab", 2)
+    pub_graph = nx.Graph()
+    pub_graph.add_weighted_edges_from(pub_edge_list)
+
+    
+    # NetMF NODE CLASSIFICATION 
+    # PubMed Large NetMF
+    netmf_node_classification(pub_graph, pub_labels, b=1, T=10, win_size="large")  
+    # PubMed Small NetMF
+    netmf_node_classification(pub_graph, pub_labels, b=1, T=1, win_size="small")
+    
+    # Blog Catalog Large NetMF
+    netmf_node_classification(blog_graph, blog_labels, b=1, T=10, win_size="large")
+    # Blog Catalog Small NetMF
+    netmf_node_classification(blog_graph, blog_labels, b=1, T=1, win_size="small")
