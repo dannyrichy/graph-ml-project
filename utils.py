@@ -2,9 +2,7 @@
 Common utility functions
 """
 from operator import methodcaller
-
 import numpy as np
-# function to assign labels to graph nodes
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import cross_validate
 
@@ -15,17 +13,17 @@ def get_labels(nodelist, labels_dict):
     return y
 
 
-# read edges from Blog Catalog
-def read_blog_catalog_edges(filename, header=0):
+# read edges from soc files: Blog Catalog, Flickr, Youtube
+def read_soc_edges(filename):
     with open(filename, 'r') as f:
-        edge_list = list(map(lambda x: (x[0], x[1], 1), list(map(methodcaller("split", ","), f.read().splitlines()[header:]))))
+        edge_list = list(map(lambda x: (x[0], x[1], 1), list(map(methodcaller("split", ","), f.read().splitlines()))))
     return edge_list
 
 
-# read labels from Blog Catalog
-def read_blog_catalog_labels(filename, header=0):
+# read labels from soc files: Blog Catalog, Flickr, Youtube
+def read_soc_labels(filename):
     with open(filename, 'r') as f:
-        labels = dict(map(lambda x: (x[0], x[1]), list(map(methodcaller("split", ","), f.read().splitlines()[header:]))))
+        labels = dict(map(lambda x: (x[0], x[1]), list(map(methodcaller("split", ","), f.read().splitlines()))))
     return labels
 
 
@@ -36,7 +34,7 @@ def read_twitter_edges(filename, header=2):
     return list_edges
 
 
-# read labels from Blog Catalog
+# read labels from Cora
 def read_cora_edges(filename, header=0):
     with open(filename, 'r') as f:
         edge_list = list(map(lambda x: (x[0], x[1], 1), list(map(methodcaller("split", '\t'), f.read().splitlines()[header:]))))
@@ -51,7 +49,7 @@ def read_pub_med_edges(filename, header=2):
 
 
 # read labels from Pub Med
-def read_pub_med_labels(filename, header=0):
+def read_pub_med_labels(filename, header=2):
     with open(filename, 'r') as f:
         labels = dict(map(lambda x: (x[0], x[1][6]), list(map(methodcaller("split", '\t'), f.read().splitlines()[header:]))))
     return labels
