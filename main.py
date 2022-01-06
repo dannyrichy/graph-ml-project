@@ -5,7 +5,7 @@ import networkx as nx
 
 from line.model import Line
 from netmf.model import NetMF
-from utils import read_blog_catalog_edges, read_blog_catalog_labels, get_labels, node_classifier
+from utils import read_blog_catalog_edges, read_blog_catalog_labels, get_labels, node_classifier, read_pub_med_edges, read_pub_med_labels
 
 logging.basicConfig(
     format='%(process)d-%(levelname)s-%(message)s',
@@ -47,7 +47,7 @@ def line_predictor(train_graph, test_graph, n_iter=20, batch_size=1024):
     l.evaluate(test_graph)
 
 
-def line_classification(graph, labels_dict, num_classes, n_iter=20, embedding_dim=128, batch_size=1024):
+def line_classification(graph, labels_dict, n_iter=20, embedding_dim=128, batch_size=1024):
     """
 
 
@@ -55,8 +55,7 @@ def line_classification(graph, labels_dict, num_classes, n_iter=20, embedding_di
     :type graph:
     :param labels_dict:
     :type labels_dict: dict
-    :param num_classes:
-    :type num_classes:
+
     :param n_iter:
     :type n_iter:
     :param embedding_dim:
@@ -93,22 +92,6 @@ def main(file_loc="../graph-ml-project/data/out.munmun_twitter_social"):
     :return:
     :rtype:
     """
-    # Twitter data
-    logging.info("Reading the graph data")
-    # edge_list = read_twitter_edges(file_loc)
-    # graph = nx.DiGraph()
-    #
-    # logging.info("Adding the edges")
-    # graph.add_weighted_edges_from(edge_list)
-    #
-    # logging.info("Preparing train test split")
-    # test_set = prepare_train_test(graph=graph)
-    # test_graph = nx.DiGraph()
-    # test_graph.add_weighted_edges_from(test_set)
-    # train_graph = graph.copy()
-    # train_graph.remove_edges_from(test_set)
-    # del graph
-    # logging.info("Constructed the graph")
 
     # BlogCatalog
     blog_edge_list = read_blog_catalog_edges("/content/soc-BlogCatalog-ASU.edges")
@@ -132,3 +115,5 @@ def main(file_loc="../graph-ml-project/data/out.munmun_twitter_social"):
     netmf_node_classification(blog_graph, blog_labels, b=1, T=10, win_size="large")
     # Blog Catalog Small NetMF
     netmf_node_classification(blog_graph, blog_labels, b=1, T=1, win_size="small")
+
+    line_classification(blog_graph, blog_labels)
