@@ -1,5 +1,6 @@
 import scipy.sparse as sp
-
+import networkx as nx
+import numpy as np
 from netmf.utils import create_embedding
 
 
