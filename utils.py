@@ -2,11 +2,17 @@
 Common utility functions
 """
 import csv
+import pickle
 from operator import methodcaller
 
 import numpy as np
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import cross_validate
+
+
+def write_dict(dict_val, filename):
+    with open(filename, 'wb') as handle:
+        pickle.dump(dict_val, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 # function to get labels of embedding based on nodelist order
@@ -46,7 +52,7 @@ def read_cora_edges(filename, header=2):
 # read labels from Cora
 def read_cora_labels(filename):
     with open(filename, 'r') as f:
-        labels = dict([(str(i+1), val) for i,val in enumerate(f.read().splitlines())])
+        labels = dict([(str(i + 1), val) for i, val in enumerate(f.read().splitlines())])
     return labels
 
 

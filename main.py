@@ -5,7 +5,8 @@ import networkx as nx
 
 from line.model import Line
 from netmf.model import NetMF
-from utils import read_soc_edges, read_soc_labels, get_labels, node_classifier, read_pub_med_edges, read_pub_med_labels, read_cora_edges, read_cora_labels
+from utils import read_soc_edges, read_soc_labels, get_labels, node_classifier, read_pub_med_edges, read_pub_med_labels, read_cora_edges, read_cora_labels, write_dict
+
 
 logging.basicConfig(
     format='%(process)d-%(levelname)s-%(message)s',
@@ -73,7 +74,10 @@ def line_classification(graph, labels_dict, n_iter=20, embedding_dim=128, batch_
     for node in embeddings.keys():
         embed_list.append(embeddings[node])
         label_list.append(labels_dict[node])
-    print(node_classifier(embed_list, label_list))
+    cv = node_classifier(embed_list, label_list)
+    write_dict(cv, 'results.pickle')
+    write_dict(embeddings, "embeddings.pickle")
+    write_dict(labels_dict, "Labels.pickle")
 
 
 # Function for Node Classification using NetMF
