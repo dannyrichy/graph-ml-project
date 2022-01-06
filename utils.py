@@ -1,7 +1,9 @@
 """
 Common utility functions
 """
+import csv
 from operator import methodcaller
+
 import numpy as np
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import cross_validate
@@ -52,6 +54,20 @@ def read_pub_med_edges(filename, header=2):
 def read_pub_med_labels(filename, header=2):
     with open(filename, 'r') as f:
         labels = dict(map(lambda x: (x[0], x[1][6]), list(map(methodcaller("split", '\t'), f.read().splitlines()[header:]))))
+    return labels
+
+
+# read edges facebook
+def read_facebook_edges(filename):
+    with open(filename, 'r') as f:
+        edge_list = list(map(lambda x: (x[0], x[1], 1), csv.reader(f)))[1:]
+    return edge_list
+
+
+# read edges facebook
+def read_facebook_labels(filename):
+    with open(filename, 'r', encoding="utf8") as f:
+        labels = dict([(x[0], x[3]) for x in csv.reader(f)][1:])
     return labels
 
 
