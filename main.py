@@ -5,7 +5,7 @@ import networkx as nx
 
 from line.model import Line
 from netmf.model import NetMF
-from utils import read_soc_edges, read_soc_labels, get_labels, node_classifier, read_pub_med_edges, read_pub_med_labels, read_cora_edges, read_cora_labels, write_dict
+from utils import *
 
 
 logging.basicConfig(
@@ -74,18 +74,16 @@ def line_classification(graph, labels_dict, n_iter=20, embedding_dim=128, batch_
     for node in embeddings.keys():
         embed_list.append(embeddings[node])
         label_list.append(labels_dict[node])
-    cv = node_classifier(embed_list, label_list)
-    write_dict(cv, 'results.pickle')
-    write_dict(embeddings, "embeddings.pickle")
-    write_dict(labels_dict, "Labels.pickle")
+    node_classifier(embed_list, label_list)
+    return
 
 
 # Function for Node Classification using NetMF
 def netmf_node_classification(graph, labels, b, T, d=128, h=256, win_size="small"):
     X = NetMF(graph, win_size, b=b, T=T, d=d, iter=10, h=h)
     y = get_labels(graph.nodes(), labels)
-
-    return node_classifier(X, y)
+    node_classifier(X, y)
+    return 
 
 
 def main():
@@ -126,6 +124,11 @@ def main():
     cora_labels = read_cora_labels("/content/drive/MyDrive/ent.subelj_cora_cora.class.name")
     cora_graph = nx.Graph()
     cora_graph.add_weighted_edges_from(cora_edge_list)
+
+    # Reddit
+    reddit_adjlist = open("/content/drive/MyDrive/reddit-adjlist.txt", 'rb')
+    reddit_graph = nx.read_adjlist(reddit_adjlist, comments='#')
+    reddit_labels = read_reddit_labels("/content/drive/MyDrive/reddit-class_map.json")
     
 
     # NetMF NODE CLASSIFICATION
@@ -153,6 +156,7 @@ def main():
     
     # Cora Line
     line_classification(cora_graph, cora_labels)
-    
     # Cora Small NetMF
     netmf_node_classification(cora_graph, cora_labels, b=1, T=1)
+    # Cora Large NetMF
+    netmf_node_classification(cora_graph, cora_labels, b=1, T=5, win_size="large")
