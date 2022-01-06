@@ -36,11 +36,18 @@ def read_twitter_edges(filename, header=2):
     return list_edges
 
 
-# read labels from Cora
-def read_cora_edges(filename, header=0):
+# read edges from Cora
+def read_cora_edges(filename, header=2):
     with open(filename, 'r') as f:
-        edge_list = list(map(lambda x: (x[0], x[1], 1), list(map(methodcaller("split", '\t'), f.read().splitlines()[header:]))))
-    return edge_list
+        list_edges = list(map(lambda x: (x[0], x[1], 1), list(map(methodcaller("split", " "), f.read().splitlines()[header:]))))
+    return list_edges
+
+
+# read labels from Cora
+def read_cora_labels(filename):
+    with open(filename, 'r') as f:
+        labels = dict([(str(i+1), val) for i,val in enumerate(f.read().splitlines())])
+    return labels
 
 
 # read edges from Pub Med
