@@ -1,15 +1,13 @@
 import logging
-import random
 
 import networkx as nx
 from stellargraph.data import EdgeSplitter
 
+from deepwalk.model import Deepwalk
 from line.model import Line
 from netmf.model import NetMF
-from deepwalk.model import Deepwalk
 from node2vec.model import Node2Vec
 from utils import *
-
 
 logging.basicConfig(
     format='%(process)d-%(levelname)s-%(message)s',
@@ -33,11 +31,8 @@ def line_predictor(graph, n_iter=20, batch_size=1024):
     """
     Link predictor for LINE model
 
-    :param train_graph:
-    :type train_graph: nx.Graph
-
-    :param test_graph:
-    :type test_graph: nx.Graph
+    :param graph:
+    :type graph: nx.Graph
 
     :param n_iter:
     :type n_iter: int
@@ -49,9 +44,10 @@ def line_predictor(graph, n_iter=20, batch_size=1024):
     :rtype: None
     """
     train_graph, test_test, labels = prepare_train_test(graph)
-    l = Line(train_graph=train_graph, batch_size=batch_size)
-    l.run(epochs=n_iter)
-    l.evaluate(test_test, labels)
+    line_predict = Line(train_graph=train_graph, batch_size=batch_size)
+    line_predict.run(epochs=n_iter)
+    y_pred = line_predict.predict(test_test)
+    print(link_prediction(y_pred=y_pred, y_true=labels))
 
 # Function for Node Classification using LINE
 def line_classification(graph, labels_dict, dataset, n_iter=20, embedding_dim=128, batch_size=1024):
@@ -106,6 +102,7 @@ def node2vec_node_classification(graph, labels, dataset, p, q):
     store_node_classify_results(results, X, y, dataset, f"Node2Vec")
     return
 
+
 # Construct graph given dataset with path in Google drive
 def construct_graph(dataset, directed=False):
     if dataset=="BlogCatalog" or dataset=="blogcatalog" or dataset=="Blog_Catalog" or dataset=="blog_catalog":
@@ -115,15 +112,15 @@ def construct_graph(dataset, directed=False):
         blog_graph.add_weighted_edges_from(blog_edge_list)
         print("Returning Blog Catalog graph and labels")
         return blog_graph, blog_labels
-        
-    elif dataset=="PubMed" or dataset=="pubmed" or dataset=="Pub_Med" or dataset=="pub_med":
+
+    elif dataset == "PubMed" or dataset == "pubmed" or dataset == "Pub_Med" or dataset == "pub_med":
         pub_edge_list = read_pub_med_edges("/content/drive/MyDrive/Datasets/Pubmed-Diabetes.DIRECTED.cites.tab")
         pub_labels = read_pub_med_labels("/content/drive/MyDrive/Datasets/Pubmed-Diabetes.NODE.paper.tab")
         pub_graph = nx.Graph()
         pub_graph.add_weighted_edges_from(pub_edge_list)
         print("Returning Pub Med graph and labels")
         return pub_graph, pub_labels
-    
+
     elif dataset=="Cora" or dataset=="cora":
         cora_edge_list = read_edges("/content/drive/MyDrive/Datasets/out.subelj_cora_cora", " ", 2)
         cora_labels = read_cora_labels("/content/drive/MyDrive/Datasets/ent.subelj_cora_cora.class.name")
@@ -138,7 +135,7 @@ def construct_graph(dataset, directed=False):
             print("Returning Cora graph and labels")
             return cora_graph, cora_labels  
 
-    elif dataset=="Reddit" or dataset=="reddit":
+    elif dataset == "Reddit" or dataset == "reddit":
         reddit_adjlist = open("/content/drive/MyDrive/Datasets/reddit-adjlist.txt", 'rb')
         reddit_graph = nx.read_adjlist(reddit_adjlist, comments='#')
         reddit_labels = read_reddit_labels("/content/drive/MyDrive/Datasets/reddit-class_map.json")
@@ -162,15 +159,15 @@ def construct_graph(dataset, directed=False):
         youtube_graph.add_weighted_edges_from(youtube_edge_list)
         print("Returning Youtube graph and labels")
         return youtube_graph, youtube_labels
-            
-    elif dataset=="Facebook" or dataset=="FaceBook" or dataset=="facebook":
+
+    elif dataset == "Facebook" or dataset == "FaceBook" or dataset == "facebook":
         facebook_edge_list = read_facebook_edges("/content/drive/MyDrive/Datasets/musae_facebook_edges.csv")
         facebook_labels = read_facebook_labels("/content/drive/MyDrive/Datasets/musae_facebook_target.csv")
         facebook_graph = nx.Graph()
         facebook_graph.add_weighted_edges_from(facebook_edge_list)
         print("Returning Facebook graph and labels")
         return facebook_graph, facebook_labels
-   
+
     elif dataset=="Twitter" or dataset=="twitter":
         twitter_edge_list = read_edges("/content/drive/MyDrive/Datasets/out.munmun_twitter_social"," ", 2)
         twitter_graph = nx.DiGraph()
@@ -196,7 +193,7 @@ def construct_graph(dataset, directed=False):
     else:
         print("Incorrect dataset name, try again!")
         return None
-    
+
 
 def main():
     """
@@ -210,11 +207,10 @@ def main():
     # read and construct data
     dataset = "Cora"
     graph, labels = construct_graph(dataset)
-    
+
     # node classification task
     line_classification(graph, labels, dataset)
     netmf_node_classification(graph, labels, dataset, T=1)
     netmf_node_classification(graph, labels, dataset, T=5, win_size="large")
     deepwalk_node_classification(graph, labels, dataset)
     node2vec_node_classification(graph, labels, dataset, p=0.25, q=4)
-    

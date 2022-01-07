@@ -8,6 +8,7 @@ from operator import methodcaller
 import numpy as np
 from google.colab import files
 from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import cross_validate
 
 # store all data from node classification
@@ -99,6 +100,24 @@ def node_classifier(x, y):
     print(cv)
     print("RESULTS:\nF1 Micro:", cv['test_f1_micro'].mean(), "\nF1 Macro:", cv['test_f1_macro'].mean())
     return cv
+
+
+# Link prediction(y_pred, y_true):
+def link_prediction(y_pred, y_true):
+    """
+
+    :param y_pred:
+    :type y_pred: numpy.ndarray
+
+    :param y_true:
+    :type y_true: numpy.ndarray
+
+    :return:
+    :rtype: float
+    """
+    y_pred[y_pred >= 0.0] = 1
+    y_pred[y_pred < 0.0] = 0
+    return roc_auc_score(y_true=y_true, y_score=y_pred)
 
 
 class AliasTable:
