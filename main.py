@@ -27,7 +27,7 @@ def prepare_train_test(graph):
     return graph_test, examples_test, labels_test
 
 
-def line_predictor(train_graph, test_graph, n_iter=20, batch_size=1024):
+def line_predictor(graph, n_iter=20, batch_size=1024):
     """
     Link predictor for LINE model
 
@@ -46,9 +46,10 @@ def line_predictor(train_graph, test_graph, n_iter=20, batch_size=1024):
     :return:
     :rtype: None
     """
+    train_graph, test_test, labels = prepare_train_test(graph)
     l = Line(train_graph=train_graph, batch_size=batch_size)
     l.run(epochs=n_iter)
-    l.evaluate(test_graph)
+    l.evaluate(test_test, labels)
 
 
 def line_classification(graph, labels_dict, dataset, n_iter=20, embedding_dim=128, batch_size=1024):
@@ -166,7 +167,7 @@ def main():
     
     # Youtube
     line_classification(youtube_graph, youtube_labels, "Youtube")
-    netmf_node_classification(youtube_raph, youtube_labels, "Youtube", T=1)
+    netmf_node_classification(youtube_graph, youtube_labels, "Youtube", T=1)
     netmf_node_classification(youtube_graph, youtube_labels, "Youtube", T=5, win_size="large")    
     
     
@@ -177,7 +178,7 @@ def main():
     
     
     # Reddit
-    line_classification(reddit_graph, reddit_abels, "Reddit")
+    line_classification(reddit_graph, reddit_labels, "Reddit")
     netmf_node_classification(reddit_graph, reddit_labels, "Reddit", T=1)
     netmf_node_classification(reddit_graph, reddit_labels, "Reddit", T=5, win_size="large")   
     
