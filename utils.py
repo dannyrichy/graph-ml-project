@@ -12,9 +12,9 @@ from google.colab import files
 
 
 def store_node_classify_results(results, embeddings, labels, dataset, model):
-    write_object(results, f"Results_{dataset}_{model}.pickle")
-    write_object(embeddings, f"Embeddings_{dataset}_{model}.pickle")
-    write_object(labels, f"Labels_{dataset}_{model}.pickle")
+    write_object(results, f"{dataset}_{model}_results.pickle")
+    write_object(embeddings, f"{dataset}_{model}_embeddings.pickle")
+    write_object(labels, f"{dataset}_{model}_labels.pickle")
 
 def write_object(obj, filename):
     with open(filename, 'wb') as handle:

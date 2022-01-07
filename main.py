@@ -84,7 +84,7 @@ def netmf_node_classification(graph, labels, dataset, T, b=1, d=128, h=256, win_
     X = NetMF(graph, win_size, b=b, T=T, d=d, iter=10, h=h)
     y = get_labels(graph.nodes(), labels)
     results = node_classifier(X, y)
-    store_node_classify_results(results, X, y, dataset, f"{win_size}_NetMF")
+    store_node_classify_results(results, X, y, dataset, f"{win_size}NetMF")
     return 
 
 
@@ -144,19 +144,27 @@ def main():
     ##### NODE CLASSIFICATION #####
     
     # BlogCatalog
-    
+    line_classification(blog_graph, blog_labels, "BlogCatalog")
+    netmf_node_classification(blog_graph, blog_labels, "BlogCatalog", T=1)
+    netmf_node_classification(blog_graph, blog_labels, "BlogCatalog", T=5, win_size="large")    
     
     
     # PubMed
-    
+    line_classification(pub_graph, pub_labels, "PubMed")
+    netmf_node_classification(pub_graph, pub_labels, "PubMed", T=1)
+    netmf_node_classification(pub_graph, pub_labels, "PubMed", T=5, win_size="large")   
     
     
     # Flickr
-    
+    line_classification(flickr_graph, flickr_labels, "Flickr")
+    netmf_node_classification(flickr_graph, flickr_labels, "Flickr", T=1, h=16389)
+    netmf_node_classification(flickr_graph, flickr_labels, "Flickr", T=5, win_size="large", h=16389)
     
     
     # Youtube
-    
+    line_classification(youtube_graph, youtube_labels, "Youtube")
+    netmf_node_classification(youtube_raph, youtube_labels, "Youtube", T=1)
+    netmf_node_classification(youtube_graph, youtube_labels, "Youtube", T=5, win_size="large")    
     
     
     # Cora
@@ -165,43 +173,16 @@ def main():
     netmf_node_classification(cora_graph, cora_labels, "Cora", T=5, win_size="large")
     
     
-    
-    
     # Reddit
-    
+    line_classification(reddit_graph, reddit_abels, "Reddit")
+    netmf_node_classification(reddit_graph, reddit_labels, "Reddit", T=1)
+    netmf_node_classification(reddit_graph, reddit_labels, "Reddit", T=5, win_size="large")   
     
     
     # Facebook
+    line_classification(facebook_graph, facebook_labels, "Facebook")
+    netmf_node_classification(facebook_graph, facebook_labels, "Facebook", T=1)
+    netmf_node_classification(facebook_graph, facebook_labels, "Facebook", T=5, win_size="large")
     
     
     
-    
-    
-    # PubMed Large NetMF
-    netmf_node_classification(pub_graph, pub_labels, b=1, T=10, win_size="large")
-    # PubMed Small NetMF
-    netmf_node_classification(pub_graph, pub_labels, b=1, T=1, win_size="small")
-
-    # Blog Catalog Large NetMF
-    netmf_node_classification(blog_graph, blog_labels, b=1, T=10, win_size="large")
-    # Blog Catalog Small NetMF
-    netmf_node_classification(blog_graph, blog_labels, b=1, T=1, win_size="small")
-    # Blog Catalog LINE
-    line_classification(blog_graph, blog_labels)
-
-    # Youtube Small NetMF
-    netmf_node_classification(youtube_graph, youtube_labels, b=1, T=1)
-    # Youtube Line
-    line_classification(youtube_graph, youtube_labels)
-
-    # Flickr Small NetMF
-    netmf_node_classification(flickr_graph, flickr_labels, b=1, T=1, h=16389)
-    # Flickr Line
-    line_classification(flickr_graph, flickr_labels)
-    
-    # Cora Line
-    line_classification(cora_graph, cora_labels)
-    # Cora Small NetMF
-    netmf_node_classification(cora_graph, cora_labels, b=1, T=1)
-    # Cora Large NetMF
-    netmf_node_classification(cora_graph, cora_labels, b=1, T=5, win_size="large")
