@@ -2,6 +2,7 @@ import logging
 import random
 
 import networkx as nx
+from stellargraph.data import EdgeSplitter
 
 from line.model import Line
 from netmf.model import NetMF
@@ -21,7 +22,9 @@ def prepare_train_test(graph):
     :return:
     :rtype:
     """
-    return random.sample([(u, v, weight['weight']) for u, v, weight in graph.edges(data=True)], int(0.25 * graph.number_of_edges()))
+    edge_splitter_test = EdgeSplitter(graph)
+    graph_test, examples_test, labels_test = edge_splitter_test.train_test_split(p=0.5, keep_connected=True)
+    return graph_test, examples_test, labels_test
 
 
 def line_predictor(train_graph, test_graph, n_iter=20, batch_size=1024):
