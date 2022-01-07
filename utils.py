@@ -5,18 +5,20 @@ import csv
 import json
 import pickle
 from operator import methodcaller
+
 import numpy as np
 from google.colab import files
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import cross_validate
 
+
 # store all data from node classification
 def store_node_classify_results(results, embeddings, labels, dataset, model):
     write_object(results, f"{dataset}_{model}_results.pickle")
     write_object(embeddings, f"{dataset}_{model}_embeddings.pickle")
     write_object(labels, f"{dataset}_{model}_labels.pickle")
-    
+
 
 # write oject into pickle file
 def write_object(obj, filename):
@@ -86,6 +88,7 @@ def read_reddit_labels(filename):
         labels = json.load(f)
     return labels
 
+
 # read node links from Reddit
 def read_reddit_links(filename):
     with open(filename, 'r') as f:
@@ -100,6 +103,38 @@ def node_classifier(x, y):
     print(cv)
     print("RESULTS:\nF1 Micro:", cv['test_f1_micro'].mean(), "\nF1 Macro:", cv['test_f1_macro'].mean())
     return cv
+
+
+def d_link_pred(edges, labels, p=0.5):
+    """
+    edges: array([node, node], ....)
+
+    labels:  array(0, 1, 0, 1.....)
+    """
+
+    mask = labels == 0
+    neg_labels = labels[mask]
+
+    mask_inv = labels == 1
+    pos_labels = labels[mask_inv]
+    pos_edges = edges[mask_inv]
+
+    num_change = int(len(neg_labels) * p)
+
+    new_edges = edges.copy()
+    # count = 0
+    count_pos = 0
+
+    indices = np.where(labels == 0)
+    for i in indices[:num_change]:
+        while True:
+            temp = np.array([pos_edges[count_pos][1], pos_edges[count_pos][0]])
+            if temp not in pos_edges:
+                new_edges[i] = temp
+                break
+            else:
+                count_pos += 1
+    return new_edges
 
 
 # Link prediction(y_pred, y_true):

@@ -51,11 +51,17 @@ def line_predictor(graph, n_iter=20, batch_size=1024, directed=False):
     :return:
     :rtype: None
     """
-    train_graph, test_test, labels = prepare_train_test(graph, directed)
+    train_graph, test_set, labels = prepare_train_test(graph, directed)
     line_predict = Line(train_graph=train_graph, batch_size=batch_size)
     line_predict.run(epochs=n_iter)
-    y_pred = line_predict.predict(test_test)
-    print(link_prediction(y_pred=y_pred, y_true=labels))
+    y_pred = line_predict.predict(test_set)
+    print("0 %:", link_prediction(y_pred=y_pred, y_true=labels))
+    test_set_50 = d_link_pred(test_set, labels, p=0.5)
+    y_pred = line_predict.predict(test_set_50)
+    print("50 %:", link_prediction(y_pred=y_pred, y_true=labels))
+    test_set_100 = d_link_pred(test_set, labels, p=1.0)
+    y_pred = line_predict.predict(test_set_100)
+    print("100 %:", link_prediction(y_pred=y_pred, y_true=labels))
 
 
 # Function for Node Classification using LINE
