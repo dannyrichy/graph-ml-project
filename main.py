@@ -63,7 +63,18 @@ def line_predictor(graph, n_iter=20, batch_size=1024, directed=False):
     y_pred = line_predict.predict(test_set_100)
     print("100 %:", link_prediction(y_pred=y_pred, y_true=labels))
 
-
+    
+# Function for Link Prediction using NetMF
+def netmf_link_prediction(graph, T, b=1, d=128, h=256, win_size="small"):
+    train_graph, test_edges, labels =  prepare_train_test(graph)
+    embedding = NetMF(graph, win_size, b=b, T=T, d=d, iter=10, h=h)
+    nodelist = list(graph.nodes())
+    Z = {nodelist[i]: embedding[i] for i in range(len(graph.nodes()))}
+    y_pred = np.array([np.dot(Z[edge[0]], Z[edge[1]]) for edge in test_edges])
+    print(f"{win_size}NetMF Link Prediction Score: {link_prediction(y_pred, labels)}")
+    return
+    
+    
 # Function for Node Classification using LINE
 def line_classification(graph, labels_dict, dataset, n_iter=20, embedding_dim=128, batch_size=1024):
     line_class = Line(train_graph=graph, batch_size=batch_size, embedding_dim=embedding_dim)
@@ -222,6 +233,7 @@ def main():
     # read and construct data
     dataset = "Cora"
     graph, labels = construct_graph(dataset)
+    print(f"Directed:{nx.is_directed(graph)}, Edges:{graph.number_of_edges()}, Nodes: {graph.number_of_nodes()}, Labels: {len(labels)}")
 
     # node classification task
     line_classification(graph, labels, dataset)
@@ -229,3 +241,9 @@ def main():
     netmf_node_classification(graph, labels, dataset, T=5, win_size="large")
     deepwalk_node_classification(graph, labels, dataset)
     node2vec_node_classification(graph, labels, dataset, p=0.25, q=4)
+    
+    # link prediction task
+    netmf_link_prediction(graph, T=1)
+    netmf_link_prediction(graph, T=5, win_size="large")
+    
+    
