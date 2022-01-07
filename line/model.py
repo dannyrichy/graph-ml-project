@@ -127,14 +127,11 @@ class Line(GraphHelper):
                     yield ([np.array(list(islice(shuffled_data[V1], *mini_batch_ixs))), np.array(list(islice(shuffled_data[V2], *mini_batch_ixs)))],
                            [np.array(list(islice(shuffled_data[LABEL], *mini_batch_ixs)))])
 
-    def evaluate(self, test_edges, labels):
+    def predict(self, test_edges):
         """
         To evaluate the model
         :param test_edges:
         :type test_edges: list
-
-        :param labels:
-        :type labels: list
 
         :return:
         :rtype:
@@ -145,7 +142,8 @@ class Line(GraphHelper):
         u2 = np.array([
             self.node_2_ix[node] for node in test_edges[:, 1]
         ])
-        print(self.model.evaluate(x=[u1, u2], y=[labels]))
+        tmp = self.model.predict(x=[u1, u2])
+        return tmp.reshape([tmp.shape[0]])
 
     def fetch_embedding_as_dict(self):
         """

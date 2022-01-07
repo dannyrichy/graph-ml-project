@@ -34,9 +34,6 @@ def line_predictor(graph, n_iter=20, batch_size=1024):
     :param graph:
     :type graph: nx.Graph
 
-    :param test_graph:
-    :type test_graph: nx.Graph
-
     :param n_iter:
     :type n_iter: int
 
@@ -47,12 +44,10 @@ def line_predictor(graph, n_iter=20, batch_size=1024):
     :rtype: None
     """
     train_graph, test_test, labels = prepare_train_test(graph)
-    l = Line(train_graph=train_graph, batch_size=batch_size)
-    l.run(epochs=n_iter)
-    labels[labels == 0] = -1
-    labels = labels.astype('float64')
-
-    l.evaluate(test_test, labels)
+    line_predict = Line(train_graph=train_graph, batch_size=batch_size)
+    line_predict.run(epochs=n_iter)
+    y_pred = line_predict.predict(test_test)
+    print(link_prediction(y_pred=y_pred, y_true=labels))
 
 
 def line_classification(graph, labels_dict, dataset, n_iter=20, embedding_dim=128, batch_size=1024):
