@@ -30,32 +30,18 @@ def get_labels(nodelist, labels_dict):
     return y
 
 
-# read edges from soc files: Blog Catalog, Flickr, Youtube
-def read_soc_edges(filename):
+# read edges: Blog Catalog, Flickr, Youtube; (" ", 2) - Cora, Epinion, Twiiter
+def read_edges(filename, separator=",", header=0):
     with open(filename, 'r') as f:
-        edge_list = list(map(lambda x: (x[0], x[1], 1), list(map(methodcaller("split", ","), f.read().splitlines()))))
+        edge_list = list(map(lambda x: (x[0], x[1], 1), list(map(methodcaller("split", separator), f.read().splitlines()[header:]))))
     return edge_list
 
 
 # read labels from soc files: Blog Catalog, Flickr, Youtube
-def read_soc_labels(filename):
+def read_labels(filename):
     with open(filename, 'r') as f:
         labels = dict(map(lambda x: (x[0], x[1]), list(map(methodcaller("split", ","), f.read().splitlines()))))
     return labels
-
-
-# read edges from Twitter
-def read_twitter_edges(filename, header=2):
-    with open(filename, 'r') as f:
-        list_edges = list(map(lambda x: (x[0], x[1], 1), list(map(methodcaller("split", " "), f.read().splitlines()[header:]))))
-    return list_edges
-
-
-# read edges from Cora
-def read_cora_edges(filename, header=2):
-    with open(filename, 'r') as f:
-        list_edges = list(map(lambda x: (x[0], x[1], 1), list(map(methodcaller("split", " "), f.read().splitlines()[header:]))))
-    return list_edges
 
 
 # read labels from Cora

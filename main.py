@@ -109,8 +109,8 @@ def node2vec_node_classification(graph, labels, dataset, p, q):
 # Construct graph given dataset with path in Google drive
 def construct_graph(dataset, directed=False):
     if dataset=="BlogCatalog" or dataset=="blogcatalog" or dataset=="Blog_Catalog" or dataset=="blog_catalog":
-        blog_edge_list = read_soc_edges("/content/drive/MyDrive/Datasets/soc-BlogCatalog-ASU.edges")
-        blog_labels = read_soc_labels("/content/drive/MyDrive/Datasets/soc-BlogCatalog-ASU.node_labels")
+        blog_edge_list = read_edges("/content/drive/MyDrive/Datasets/soc-BlogCatalog-ASU.edges")
+        blog_labels = read_labels("/content/drive/MyDrive/Datasets/soc-BlogCatalog-ASU.node_labels")
         blog_graph = nx.Graph()
         blog_graph.add_weighted_edges_from(blog_edge_list)
         print("Returning Blog Catalog graph and labels")
@@ -125,7 +125,7 @@ def construct_graph(dataset, directed=False):
         return pub_graph, pub_labels
     
     elif dataset=="Cora" or dataset=="cora":
-        cora_edge_list = read_cora_edges("/content/drive/MyDrive/Datasets/out.subelj_cora_cora")
+        cora_edge_list = read_edges("/content/drive/MyDrive/Datasets/out.subelj_cora_cora", " ", 2)
         cora_labels = read_cora_labels("/content/drive/MyDrive/Datasets/ent.subelj_cora_cora.class.name")
         if directed == True:
             cora_graph = nx.DiGraph()
@@ -148,16 +148,16 @@ def construct_graph(dataset, directed=False):
         return reddit_graph, reddit_labels
     
     elif dataset=="Flickr" or dataset=="flickr":
-        flickr_edge_list = read_soc_edges("/content/drive/MyDrive/Datasets/soc-Flickr-ASU.edges")
-        flickr_labels = read_soc_labels("/content/drive/MyDrive/Datasets/soc-Flickr-ASU.node_labels")
+        flickr_edge_list = read_edges("/content/drive/MyDrive/Datasets/soc-Flickr-ASU.edges")
+        flickr_labels = read_labels("/content/drive/MyDrive/Datasets/soc-Flickr-ASU.node_labels")
         flickr_graph = nx.Graph()
         flickr_graph.add_weighted_edges_from(flickr_edge_list)
         print("Returning Flickr graph and labels")
         return flickr_graph, flickr_labels
 
     elif dataset=="Youtube" or dataset=="YouTube" or dataset=="youtube":
-        youtube_edge_list = read_soc_edges("/content/drive/MyDrive/Datasets/soc-YouTube-ASU.edges")
-        youtube_labels = read_soc_labels("/content/drive/MyDrive/Datasets/soc-YouTube-ASU.node_labels")
+        youtube_edge_list = read_edges("/content/drive/MyDrive/Datasets/soc-YouTube-ASU.edges")
+        youtube_labels = read_labels("/content/drive/MyDrive/Datasets/soc-YouTube-ASU.node_labels")
         youtube_graph = nx.Graph()
         youtube_graph.add_weighted_edges_from(youtube_edge_list)
         print("Returning Youtube graph and labels")
@@ -172,10 +172,10 @@ def construct_graph(dataset, directed=False):
         return facebook_graph, facebook_labels
    
     elif dataset=="Twitter" or dataset=="twitter":
-        twitter_edge_list = read_twitter_edges("/content/drive/MyDrive/Datasets/musae_facebook_edges.csv")
+        twitter_edge_list = read_edges("/content/drive/MyDrive/Datasets/out.munmun_twitter_social"," ", 2)
         twitter_graph = nx.DiGraph()
-        twitter_graph.add_weighted_edges_from(ftwitter_edge_list)
-        print("Returning Twitter graph")
+        twitter_graph.add_weighted_edges_from(twitter_edge_list)
+        print("Returning Twitter directed graph")
         return twitter_graph 
 
     elif dataset=="DBLP-Ci" or dataset=="dblp-ci":
@@ -183,8 +183,11 @@ def construct_graph(dataset, directed=False):
         
         return None
     elif dataset=="Epinion" or dataset=="epinion":
-        print("Dataset not yet available, try again!")
-        return None
+        epinion_edge_list = read_edges("/content/drive/MyDrive/Datasets/soc-Epinions1.mtx", " ",  2)
+        epinion_graph = nx.DiGraph()
+        epinion_graph.add_weighted_edges_from(epinion_edge_list)
+        print("Returning Epinion directed graph")
+        return epinion_graph
     
     elif dataset=="DBLP-Au" or dataset=="dblp-au":
         print("Dataset not yet available, try again!")
