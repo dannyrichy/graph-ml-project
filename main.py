@@ -14,7 +14,7 @@ logging.basicConfig(
     level=logging.INFO)
 
 
-def prepare_train_test(graph):
+def prepare_train_test(graph, directed=False):
     """
     Train test split
     :param graph:
@@ -22,8 +22,16 @@ def prepare_train_test(graph):
     :return:
     :rtype:
     """
-    edge_splitter_test = EdgeSplitter(graph)
-    graph_test, examples_test, labels_test = edge_splitter_test.train_test_split(p=0.5, keep_connected=True)
+    if directed:
+        edge_splitter_test = EdgeSplitter(graph)
+        graph_test, examples_test, labels_test = edge_splitter_test.train_test_split(p=0.5, keep_connected=True)
+        for idx, edge in enumerate(examples_test[np.where(labels_test == 1)]):
+            if not graph.has_edge(*tuple(edge)):
+                examples_test[idx] = np.flip(edge)
+    else:
+        edge_splitter_test = EdgeSplitter(graph)
+        graph_test, examples_test, labels_test = edge_splitter_test.train_test_split(p=0.5, keep_connected=True)
+
     return graph_test, examples_test, labels_test
 
 
