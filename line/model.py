@@ -16,7 +16,7 @@ def loss_fun(y_true, y_predicted):
     return -k.mean(k.log(k.sigmoid(y_true * y_predicted)))
 
 
-class LinkPredict(GraphHelper):
+class Line(GraphHelper):
     def __init__(self, train_graph, batch_size=128, negative_ratio=5, embedding_dim=128):
         """
         Class for link prediction
@@ -41,14 +41,14 @@ class LinkPredict(GraphHelper):
 
         # Defining the input block
         logging.info("Creating the model")
-        self.model = self._create_model()
+        self.model, self.embed = self._create_model()
 
     def _create_model(self):
         """
         Creates tensorflow model
 
-        :return: model
-        :rtype: tensorflow.keras.models.Model
+        :return: model and the embedding
+        :rtype: (tensorflow.keras.models.Model, tensorflow.keras.layers.Embedding)
         """
         node1 = layers.Input(shape=(1,))
         node2 = layers.Input(shape=(1,))
@@ -60,24 +60,25 @@ class LinkPredict(GraphHelper):
 
         out = layers.Lambda(lambda x: tf.reduce_sum(x[0] * x[1], axis=-1, keepdims=False), name='LINE-1')([u1, u2])
 
-        return Model(inputs=[node1, node2], outputs=[out])
+        return Model(inputs=[node1, node2], outputs=[out]), embed
 
-    def run(self, epochs, opt='adam'):
+    def compile_model(self):
+        logging.info("Compiling a model with Adam optimizer")
+        self.model.compile(optimizer='adam',
+                           loss=loss_fun,
+                           metrics=[tf.keras.metrics.Accuracy()])
+
+    def run(self, epochs, ):
         """
         Fit the model
 
         :param epochs: Number of epochs
         :type epochs: int
 
-        :param opt: Optimiser to use
-        :type opt: str
-
         :return: Nothing
         :rtype: None
         """
-        logging.info("Compiling a model with Adam optimizer")
-        self.model.compile(opt, loss_fun,
-                           metrics=[tf.keras.metrics.Accuracy()])
+        self.compile_model()
 
         logging.info("Fitting the model with batch size:{}, epochs:{}".format(self.batch_size, epochs))
         batch_gen = self._batch_size_gen(self.batch_size)
@@ -160,3 +161,26 @@ class LinkPredict(GraphHelper):
                 data[V2].append(v3)
                 data[LABEL].append(-1.0)
         print(self.model.evaluate(x=[np.array(data[V1]), np.array(data[V1])], y=[np.array(data[LABEL])]))
+
+    def fetch_embedding_as_dict(self):
+        """
+        Fetches the embedding for each and every node in the graph
+
+        :return:
+        :rtype:
+        """
+        return {self.ix_2_node[ix]: embedding
+                for ix, embedding in enumerate(self.embed.get_weights()[0])
+                }
+
+    def get_embedding(self, node_ix):
+        """
+        Gets the embedding corresponding to a particular node
+
+        :param node_ix: index of node as captured in node_2_ix
+        :type node_ix: int
+
+        :return: embedding
+        :rtype: numpy.ndarray
+        """
+        return self.embed.get_weights()[0][node_ix]

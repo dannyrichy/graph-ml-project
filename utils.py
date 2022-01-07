@@ -1,30 +1,44 @@
 """
 Common utility functions
 """
+import csv
+import pickle
 from operator import methodcaller
-from typing import List
-
+import json
 import numpy as np
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import cross_validate
+from google.colab import files
 
 
-# function to assign labels to nodes
-def assign_labels(graph, labels_list, label_name='label'):
-    for node, label in labels_list:
-        graph.nodes[node][label_name] = label
-    return graph
+def store_node_classify_results(results, embeddings, labels, dataset, model):
+    write_object(results, f"{dataset}_{model}_results.pickle")
+    write_object(embeddings, f"{dataset}_{model}_embeddings.pickle")
+    write_object(labels, f"{dataset}_{model}_labels.pickle")
+
+def write_object(obj, filename):
+    with open(filename, 'wb') as handle:
+        pickle.dump(obj, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    files.download(filename)
 
 
-# read edges from Blog Catalog
-def read_blog_catalog_edges(filename, header=0):
+# function to get labels of embedding based on nodelist order
+def get_labels(nodelist, labels_dict):
+    y = [labels_dict[x] for x in nodelist]
+    return y
+
+
+# read edges from soc files: Blog Catalog, Flickr, Youtube
+def read_soc_edges(filename):
     with open(filename, 'r') as f:
-        edge_list = list(map(lambda x: (x[0], x[1], 1), list(map(methodcaller("split", ","), f.read().splitlines()[header:]))))
+        edge_list = list(map(lambda x: (x[0], x[1], 1), list(map(methodcaller("split", ","), f.read().splitlines()))))
     return edge_list
 
 
-# read labels from Blog Catalog
-def read_blog_catalog_labels(filename, header=0):
+# read labels from soc files: Blog Catalog, Flickr, Youtube
+def read_soc_labels(filename):
     with open(filename, 'r') as f:
-        labels = list(map(lambda x: (x[0], x[1]), list(map(methodcaller("split", ","), f.read().splitlines()[header:]))))
+        labels = dict(map(lambda x: (x[0], x[1]), list(map(methodcaller("split", ","), f.read().splitlines()))))
     return labels
 
 
@@ -34,6 +48,63 @@ def read_twitter_edges(filename, header=2):
         list_edges = list(map(lambda x: (x[0], x[1], 1), list(map(methodcaller("split", " "), f.read().splitlines()[header:]))))
     return list_edges
 
+
+# read edges from Cora
+def read_cora_edges(filename, header=2):
+    with open(filename, 'r') as f:
+        list_edges = list(map(lambda x: (x[0], x[1], 1), list(map(methodcaller("split", " "), f.read().splitlines()[header:]))))
+    return list_edges
+
+
+# read labels from Cora
+def read_cora_labels(filename):
+    with open(filename, 'r') as f:
+        labels = dict([(str(i + 1), val) for i, val in enumerate(f.read().splitlines())])
+    return labels
+
+
+# read edges from Pub Med
+def read_pub_med_edges(filename, header=2):
+    with open(filename, 'r') as f:
+        edge_list = list(map(lambda x: (x[1][6:], x[3][6:], 1), list(map(methodcaller("split", '\t'), f.read().splitlines()[header:]))))
+    return edge_list
+
+
+# read labels from Pub Med
+def read_pub_med_labels(filename, header=2):
+    with open(filename, 'r') as f:
+        labels = dict(map(lambda x: (x[0], x[1][6]), list(map(methodcaller("split", '\t'), f.read().splitlines()[header:]))))
+    return labels
+
+
+# read edges facebook
+def read_facebook_edges(filename):
+    with open(filename, 'r') as f:
+        edge_list = list(map(lambda x: (x[0], x[1], 1), csv.reader(f)))[1:]
+    return edge_list
+
+
+# read labels facebook
+def read_facebook_labels(filename):
+    with open(filename, 'r', encoding="utf8") as f:
+        labels = dict([(x[0], x[3]) for x in csv.reader(f)][1:])
+    return labels
+
+
+# read labels from Reddit
+def read_reddit_labels(filename):
+    with open(filename, 'r') as f:
+        labels = json.load(f)
+    return labels
+
+
+# Logistic Regression - Node Classifer
+def node_classifier(x, y):
+    classifier = LogisticRegression(multi_class='ovr', solver='sag', n_jobs=-1, random_state=42)
+    cv = cross_validate(classifier, x, y, scoring=('f1_micro', 'f1_macro'))
+    print(cv)
+    print("RESULTS:\nF1 Micro:", cv['test_f1_micro'].mean(), "\nF1 Macro:", cv['test_f1_macro'].mean())
+    return cv
 
 
 class AliasTable:
