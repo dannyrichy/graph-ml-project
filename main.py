@@ -23,19 +23,19 @@ def prepare_train_test(graph, directed=False):
     :rtype:
     """
     if directed:
-        edge_splitter_test = EdgeSplitter(graph)
-        graph_test, examples_test, labels_test = edge_splitter_test.train_test_split(p=0.5, keep_connected=True)
+        edge_splitter_test = EdgeSplitter(graph.to_undirected())
+        train_graph, examples_test, labels_test = edge_splitter_test.train_test_split(p=0.5, keep_connected=True)
         for idx, edge in enumerate(examples_test[np.where(labels_test == 1)]):
             if not graph.has_edge(*tuple(edge)):
                 examples_test[idx] = np.flip(edge)
     else:
         edge_splitter_test = EdgeSplitter(graph)
-        graph_test, examples_test, labels_test = edge_splitter_test.train_test_split(p=0.5, keep_connected=True)
+        train_graph, examples_test, labels_test = edge_splitter_test.train_test_split(p=0.5, keep_connected=True)
 
-    return graph_test, examples_test, labels_test
+    return train_graph, examples_test, labels_test
 
 
-def line_predictor(graph, n_iter=20, batch_size=1024):
+def line_predictor(graph, n_iter=20, batch_size=1024, directed=False):
     """
     Link predictor for LINE model
 
@@ -51,11 +51,18 @@ def line_predictor(graph, n_iter=20, batch_size=1024):
     :return:
     :rtype: None
     """
-    train_graph, test_test, labels = prepare_train_test(graph)
+    train_graph, test_set, labels = prepare_train_test(graph, directed)
     line_predict = Line(train_graph=train_graph, batch_size=batch_size)
     line_predict.run(epochs=n_iter)
-    y_pred = line_predict.predict(test_test)
-    print(link_prediction(y_pred=y_pred, y_true=labels))
+    y_pred = line_predict.predict(test_set)
+    print("0 %:", link_prediction(y_pred=y_pred, y_true=labels))
+    test_set_50 = d_link_pred(test_set, labels, p=0.5)
+    y_pred = line_predict.predict(test_set_50)
+    print("50 %:", link_prediction(y_pred=y_pred, y_true=labels))
+    test_set_100 = d_link_pred(test_set, labels, p=1.0)
+    y_pred = line_predict.predict(test_set_100)
+    print("100 %:", link_prediction(y_pred=y_pred, y_true=labels))
+
 
 # Function for Node Classification using LINE
 def line_classification(graph, labels_dict, dataset, n_iter=20, embedding_dim=128, batch_size=1024):
@@ -113,7 +120,7 @@ def node2vec_node_classification(graph, labels, dataset, p, q):
 
 # Construct graph given dataset with path in Google drive
 def construct_graph(dataset, directed=False):
-    if dataset=="BlogCatalog" or dataset=="blogcatalog" or dataset=="Blog_Catalog" or dataset=="blog_catalog":
+    if dataset == "BlogCatalog" or dataset == "blogcatalog" or dataset == "Blog_Catalog" or dataset == "blog_catalog":
         blog_edge_list = read_edges("/content/drive/MyDrive/Datasets/soc-BlogCatalog-ASU.edges")
         blog_labels = read_labels("/content/drive/MyDrive/Datasets/soc-BlogCatalog-ASU.node_labels")
         blog_graph = nx.Graph()
@@ -129,7 +136,7 @@ def construct_graph(dataset, directed=False):
         print("Returning Pub Med graph and labels")
         return pub_graph, pub_labels
 
-    elif dataset=="Cora" or dataset=="cora":
+    elif dataset == "Cora" or dataset == "cora":
         cora_edge_list = read_edges("/content/drive/MyDrive/Datasets/out.subelj_cora_cora", " ", 2)
         cora_labels = read_cora_labels("/content/drive/MyDrive/Datasets/ent.subelj_cora_cora.class.name")
         if directed == True:
@@ -141,18 +148,18 @@ def construct_graph(dataset, directed=False):
             cora_graph = nx.Graph()
             cora_graph.add_weighted_edges_from(cora_edge_list)
             print("Returning Cora graph and labels")
-            return cora_graph, cora_labels  
+            return cora_graph, cora_labels
 
     elif dataset == "Reddit" or dataset == "reddit":
         reddit_adjlist = open("/content/drive/MyDrive/Datasets/reddit-adjlist.txt", 'rb')
         reddit_graph = nx.read_adjlist(reddit_adjlist, comments='#')
         reddit_labels = read_reddit_labels("/content/drive/MyDrive/Datasets/reddit-class_map.json")
-        #reddit_node_links =  read_reddit_links("/content/drive/MyDrive/Datasets/reddit-G.json")
-        #reddit_graph = nx.readwrite.json_graph.node_link_graph(reddit_node_links)
+        # reddit_node_links =  read_reddit_links("/content/drive/MyDrive/Datasets/reddit-G.json")
+        # reddit_graph = nx.readwrite.json_graph.node_link_graph(reddit_node_links)
         print("Returning Reddit graph and labels")
         return reddit_graph, reddit_labels
-    
-    elif dataset=="Flickr" or dataset=="flickr":
+
+    elif dataset == "Flickr" or dataset == "flickr":
         flickr_edge_list = read_edges("/content/drive/MyDrive/Datasets/soc-Flickr-ASU.edges")
         flickr_labels = read_labels("/content/drive/MyDrive/Datasets/soc-Flickr-ASU.node_labels")
         flickr_graph = nx.Graph()
@@ -160,7 +167,7 @@ def construct_graph(dataset, directed=False):
         print("Returning Flickr graph and labels")
         return flickr_graph, flickr_labels
 
-    elif dataset=="Youtube" or dataset=="YouTube" or dataset=="youtube":
+    elif dataset == "Youtube" or dataset == "YouTube" or dataset == "youtube":
         youtube_edge_list = read_edges("/content/drive/MyDrive/Datasets/soc-YouTube-ASU.edges")
         youtube_labels = read_labels("/content/drive/MyDrive/Datasets/soc-YouTube-ASU.node_labels")
         youtube_graph = nx.Graph()
@@ -176,28 +183,28 @@ def construct_graph(dataset, directed=False):
         print("Returning Facebook graph and labels")
         return facebook_graph, facebook_labels
 
-    elif dataset=="Twitter" or dataset=="twitter":
-        twitter_edge_list = read_edges("/content/drive/MyDrive/Datasets/out.munmun_twitter_social"," ", 2)
+    elif dataset == "Twitter" or dataset == "twitter":
+        twitter_edge_list = read_edges("/content/drive/MyDrive/Datasets/out.munmun_twitter_social", " ", 2)
         twitter_graph = nx.DiGraph()
         twitter_graph.add_weighted_edges_from(twitter_edge_list)
         print("Returning Twitter directed graph")
-        return twitter_graph 
+        return twitter_graph
 
-    elif dataset=="DBLP-Ci" or dataset=="dblp-ci":
+    elif dataset == "DBLP-Ci" or dataset == "dblp-ci":
         print("Dataset not yet available, try again!")
-        
+
         return None
-    elif dataset=="Epinion" or dataset=="epinion":
-        epinion_edge_list = read_edges("/content/drive/MyDrive/Datasets/soc-Epinions1.mtx", " ",  2)
+    elif dataset == "Epinion" or dataset == "epinion":
+        epinion_edge_list = read_edges("/content/drive/MyDrive/Datasets/soc-Epinions1.mtx", " ", 2)
         epinion_graph = nx.DiGraph()
         epinion_graph.add_weighted_edges_from(epinion_edge_list)
         print("Returning Epinion directed graph")
         return epinion_graph
-    
-    elif dataset=="DBLP-Au" or dataset=="dblp-au":
+
+    elif dataset == "DBLP-Au" or dataset == "dblp-au":
         print("Dataset not yet available, try again!")
         return None
-            
+
     else:
         print("Incorrect dataset name, try again!")
         return None
