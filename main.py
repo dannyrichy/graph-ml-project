@@ -48,7 +48,7 @@ def line_predictor(train_graph, test_graph, n_iter=20, batch_size=1024):
     l.evaluate(test_graph)
 
 
-def line_classification(graph, labels_dict, n_iter=20, embedding_dim=128, batch_size=1024):
+def line_classification(graph, labels_dict, dataset, n_iter=20, embedding_dim=128, batch_size=1024):
     """
 
 
@@ -74,15 +74,17 @@ def line_classification(graph, labels_dict, n_iter=20, embedding_dim=128, batch_
     for node in embeddings.keys():
         embed_list.append(embeddings[node])
         label_list.append(labels_dict[node])
-    node_classifier(embed_list, label_list)
+    results = node_classifier(embed_list, label_list)
+    store_node_classify_results(results, embed_list, label_list, dataset, "LINE")
     return
 
 
 # Function for Node Classification using NetMF
-def netmf_node_classification(graph, labels, b, T, d=128, h=256, win_size="small"):
+def netmf_node_classification(graph, labels, dataset, T, b=1, d=128, h=256, win_size="small"):
     X = NetMF(graph, win_size, b=b, T=T, d=d, iter=10, h=h)
     y = get_labels(graph.nodes(), labels)
-    node_classifier(X, y)
+    results = node_classifier(X, y)
+    store_node_classify_results(results, X, y, dataset, f"{win_size}_NetMF")
     return 
 
 
@@ -95,43 +97,86 @@ def main():
     :rtype:
     """
 
+    ##### READ and CONSTRUCT all DATATSETS #####
+    
     # BlogCatalog
-    blog_edge_list = read_soc_edges("/content/soc-BlogCatalog-ASU.edges")
-    blog_labels = read_soc_labels("/content/soc-BlogCatalog-ASU.node_labels")
+    blog_edge_list = read_soc_edges("/content/drive/MyDrive/Datasets/soc-BlogCatalog-ASU.edges")
+    blog_labels = read_soc_labels("/content/drive/MyDrive/Datasets/soc-BlogCatalog-ASU.node_labels")
     blog_graph = nx.Graph()
     blog_graph.add_weighted_edges_from(blog_edge_list)
 
     # PubMed
-    pub_edge_list = read_pub_med_edges("/content/Pubmed-Diabetes.DIRECTED.cites.tab")
-    pub_labels = read_pub_med_labels("/content/Pubmed-Diabetes.NODE.paper.tab")
+    pub_edge_list = read_pub_med_edges("/content/drive/MyDrive/Datasets/Pubmed-Diabetes.DIRECTED.cites.tab")
+    pub_labels = read_pub_med_labels("/content/drive/MyDrive/Datasets/Pubmed-Diabetes.NODE.paper.tab")
     pub_graph = nx.Graph()
     pub_graph.add_weighted_edges_from(pub_edge_list)
 
     # Flickr
-    flickr_edge_list = read_soc_edges("/content/drive/MyDrive/soc-Flickr-ASU.edges")
-    flickr_labels = read_soc_labels("/content/drive/MyDrive/soc-Flickr-ASU.node_labels")
+    flickr_edge_list = read_soc_edges("/content/drive/MyDrive/Datasets/soc-Flickr-ASU.edges")
+    flickr_labels = read_soc_labels("/content/drive/MyDrive/Datasets/soc-Flickr-ASU.node_labels")
     flickr_graph = nx.Graph()
     flickr_graph.add_weighted_edges_from(flickr_edge_list)
 
     # Youtube
-    youtube_edge_list = read_soc_edges("/content/drive/MyDrive/soc-YouTube-ASU.edges")
-    youtube_labels = read_soc_labels("/content/drive/MyDrive/soc-YouTube-ASU.node_labels")
+    youtube_edge_list = read_soc_edges("/content/drive/MyDrive/Datasets/soc-YouTube-ASU.edges")
+    youtube_labels = read_soc_labels("/content/drive/MyDrive/Datasets/soc-YouTube-ASU.node_labels")
     youtube_graph = nx.Graph()
-    youtube_graph.add_weighted_edges_from(flickr_edge_list)
-    
+    youtube_graph.add_weighted_edges_from(youtube_edge_list)
+
     # Cora
-    cora_edge_list = read_cora_edges("/content/drive/MyDrive/out.subelj_cora_cora")
-    cora_labels = read_cora_labels("/content/drive/MyDrive/ent.subelj_cora_cora.class.name")
+    cora_edge_list = read_cora_edges("/content/drive/MyDrive/Datasets/out.subelj_cora_cora")
+    cora_labels = read_cora_labels("/content/drive/MyDrive/Datasets/ent.subelj_cora_cora.class.name")
     cora_graph = nx.Graph()
     cora_graph.add_weighted_edges_from(cora_edge_list)
 
     # Reddit
-    reddit_adjlist = open("/content/drive/MyDrive/reddit-adjlist.txt", 'rb')
+    reddit_adjlist = open("/content/drive/MyDrive/Datasets/reddit-adjlist.txt", 'rb')
     reddit_graph = nx.read_adjlist(reddit_adjlist, comments='#')
-    reddit_labels = read_reddit_labels("/content/drive/MyDrive/reddit-class_map.json")
+    reddit_labels = read_reddit_labels("/content/drive/MyDrive/Datasets/reddit-class_map.json")
+
+    # Facebook
+    facebook_edge_list = read_facebook_edges("/content/drive/MyDrive/Datasets/musae_facebook_edges.csv")
+    facebook_labels = read_facebook_labels("/content/drive/MyDrive/Datasets/musae_facebook_target.csv")
+    facebook_graph = nx.Graph()
+    facebook_graph.add_weighted_edges_from(facebook_edge_list)
     
 
-    # NetMF NODE CLASSIFICATION
+    ##### NODE CLASSIFICATION #####
+    
+    # BlogCatalog
+    
+    
+    
+    # PubMed
+    
+    
+    
+    # Flickr
+    
+    
+    
+    # Youtube
+    
+    
+    
+    # Cora
+    line_classification(cora_graph, cora_labels, "Cora")
+    netmf_node_classification(cora_graph, cora_labels, "Cora", T=1)
+    netmf_node_classification(cora_graph, cora_labels, "Cora", T=5, win_size="large")
+    
+    
+    
+    
+    # Reddit
+    
+    
+    
+    # Facebook
+    
+    
+    
+    
+    
     # PubMed Large NetMF
     netmf_node_classification(pub_graph, pub_labels, b=1, T=10, win_size="large")
     # PubMed Small NetMF

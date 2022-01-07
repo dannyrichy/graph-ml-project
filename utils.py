@@ -11,6 +11,11 @@ from sklearn.model_selection import cross_validate
 from google.colab import files
 
 
+def store_node_classify_results(results, embeddings, labels, dataset, model):
+    write_object(results, f"Results_{dataset}_{model}.pickle")
+    write_object(embeddings, f"Embeddings_{dataset}_{model}.pickle")
+    write_object(labels, f"Labels_{dataset}_{model}.pickle")
+
 def write_object(obj, filename):
     with open(filename, 'wb') as handle:
         pickle.dump(obj, handle, protocol=pickle.HIGHEST_PROTOCOL)
@@ -97,14 +102,9 @@ def read_reddit_labels(filename):
 def node_classifier(x, y):
     classifier = LogisticRegression(multi_class='ovr', solver='sag', n_jobs=-1, random_state=42)
     cv = cross_validate(classifier, x, y, scoring=('f1_micro', 'f1_macro'))
-
-    write_object(cv, "results.pickle")
-    write_object(x, "embeddings.pickle")
-    write_object(y, "Labels.pickle")
-    
     print(cv)
     print("RESULTS:\nF1 Micro:", cv['test_f1_micro'].mean(), "\nF1 Macro:", cv['test_f1_macro'].mean())
-    return
+    return cv
 
 
 class AliasTable:
