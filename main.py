@@ -1,5 +1,4 @@
 import logging
-import random
 
 import networkx as nx
 from stellargraph.data import EdgeSplitter
@@ -7,7 +6,6 @@ from stellargraph.data import EdgeSplitter
 from line.model import Line
 from netmf.model import NetMF
 from utils import *
-
 
 logging.basicConfig(
     format='%(process)d-%(levelname)s-%(message)s',
@@ -31,8 +29,8 @@ def line_predictor(graph, n_iter=20, batch_size=1024):
     """
     Link predictor for LINE model
 
-    :param train_graph:
-    :type train_graph: nx.Graph
+    :param graph:
+    :type graph: nx.Graph
 
     :param test_graph:
     :type test_graph: nx.Graph
@@ -49,6 +47,8 @@ def line_predictor(graph, n_iter=20, batch_size=1024):
     train_graph, test_test, labels = prepare_train_test(graph)
     l = Line(train_graph=train_graph, batch_size=batch_size)
     l.run(epochs=n_iter)
+    labels[labels == 0] = -1
+    labels = labels.astype('float64')
     l.evaluate(test_test, labels)
 
 
@@ -89,7 +89,7 @@ def netmf_node_classification(graph, labels, dataset, T, b=1, d=128, h=256, win_
     y = get_labels(graph.nodes(), labels)
     results = node_classifier(X, y)
     store_node_classify_results(results, X, y, dataset, f"{win_size}NetMF")
-    return 
+    return
 
 
 def main():
@@ -102,7 +102,7 @@ def main():
     """
 
     ##### READ and CONSTRUCT all DATATSETS #####
-    
+
     # BlogCatalog
     blog_edge_list = read_soc_edges("/content/drive/MyDrive/Datasets/soc-BlogCatalog-ASU.edges")
     blog_labels = read_soc_labels("/content/drive/MyDrive/Datasets/soc-BlogCatalog-ASU.node_labels")
@@ -143,50 +143,40 @@ def main():
     facebook_labels = read_facebook_labels("/content/drive/MyDrive/Datasets/musae_facebook_target.csv")
     facebook_graph = nx.Graph()
     facebook_graph.add_weighted_edges_from(facebook_edge_list)
-    
 
     ##### NODE CLASSIFICATION #####
-    
+
     # BlogCatalog
     line_classification(blog_graph, blog_labels, "BlogCatalog")
     netmf_node_classification(blog_graph, blog_labels, "BlogCatalog", T=1)
-    netmf_node_classification(blog_graph, blog_labels, "BlogCatalog", T=5, win_size="large")    
-    
-    
+    netmf_node_classification(blog_graph, blog_labels, "BlogCatalog", T=5, win_size="large")
+
     # PubMed
     line_classification(pub_graph, pub_labels, "PubMed")
     netmf_node_classification(pub_graph, pub_labels, "PubMed", T=1)
-    netmf_node_classification(pub_graph, pub_labels, "PubMed", T=5, win_size="large")   
-    
-    
+    netmf_node_classification(pub_graph, pub_labels, "PubMed", T=5, win_size="large")
+
     # Flickr
     line_classification(flickr_graph, flickr_labels, "Flickr")
     netmf_node_classification(flickr_graph, flickr_labels, "Flickr", T=1, h=16389)
     netmf_node_classification(flickr_graph, flickr_labels, "Flickr", T=5, win_size="large", h=16389)
-    
-    
+
     # Youtube
     line_classification(youtube_graph, youtube_labels, "Youtube")
     netmf_node_classification(youtube_graph, youtube_labels, "Youtube", T=1)
-    netmf_node_classification(youtube_graph, youtube_labels, "Youtube", T=5, win_size="large")    
-    
-    
+    netmf_node_classification(youtube_graph, youtube_labels, "Youtube", T=5, win_size="large")
+
     # Cora
     line_classification(cora_graph, cora_labels, "Cora")
     netmf_node_classification(cora_graph, cora_labels, "Cora", T=1)
     netmf_node_classification(cora_graph, cora_labels, "Cora", T=5, win_size="large")
-    
-    
+
     # Reddit
     line_classification(reddit_graph, reddit_labels, "Reddit")
     netmf_node_classification(reddit_graph, reddit_labels, "Reddit", T=1)
-    netmf_node_classification(reddit_graph, reddit_labels, "Reddit", T=5, win_size="large")   
-    
-    
+    netmf_node_classification(reddit_graph, reddit_labels, "Reddit", T=5, win_size="large")
+
     # Facebook
     line_classification(facebook_graph, facebook_labels, "Facebook")
     netmf_node_classification(facebook_graph, facebook_labels, "Facebook", T=1)
     netmf_node_classification(facebook_graph, facebook_labels, "Facebook", T=5, win_size="large")
-    
-    
-    

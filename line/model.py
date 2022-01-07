@@ -139,19 +139,13 @@ class Line(GraphHelper):
         :return:
         :rtype:
         """
-        num_edges = len(test_edges)
-        labels[labels == 0] = -1.0
-        data = {
-            V1: list(),
-            V2: list(),
-            LABEL: list()
-
-        }
-        for i in range(num_edges):
-            data[V1].append(test_edges[i][0])
-            data[V2].append(test_edges[i][1])
-            data[LABEL].append(labels[i])
-        print(self.model.evaluate(x=[test_edges[:, 0], test_edges[:, 1]], y=[labels]))
+        u1 = np.array([
+            self.node_2_ix[node] for node in test_edges[:, 0]
+        ])
+        u2 = np.array([
+            self.node_2_ix[node] for node in test_edges[:, 1]
+        ])
+        print(self.model.evaluate(x=[u1, u2], y=[labels]))
 
     def fetch_embedding_as_dict(self):
         """
