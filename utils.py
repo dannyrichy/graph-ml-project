@@ -5,19 +5,19 @@ import csv
 import json
 import pickle
 from operator import methodcaller
-
 import numpy as np
 from google.colab import files
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import cross_validate
 
-
+# store all data from node classification
 def store_node_classify_results(results, embeddings, labels, dataset, model):
     write_object(results, f"{dataset}_{model}_results.pickle")
     write_object(embeddings, f"{dataset}_{model}_embeddings.pickle")
     write_object(labels, f"{dataset}_{model}_labels.pickle")
+    
 
-
+# write oject into pickle file
 def write_object(obj, filename):
     with open(filename, 'wb') as handle:
         pickle.dump(obj, handle, protocol=pickle.HIGHEST_PROTOCOL)
@@ -98,6 +98,12 @@ def read_reddit_labels(filename):
     with open(filename, 'r') as f:
         labels = json.load(f)
     return labels
+
+# read node links from Reddit
+def read_reddit_links(filename):
+    with open(filename, 'r') as f:
+        graph_data = json.load(f)
+    return graph_data
 
 
 # Logistic Regression - Node Classifer

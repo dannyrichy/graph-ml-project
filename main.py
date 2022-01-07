@@ -53,25 +53,8 @@ def line_predictor(graph, n_iter=20, batch_size=1024):
     l.run(epochs=n_iter)
     l.evaluate(test_test, labels)
 
-
+# Function for Node Classification using LINE
 def line_classification(graph, labels_dict, dataset, n_iter=20, embedding_dim=128, batch_size=1024):
-    """
-
-
-    :param graph:
-    :type graph:
-    :param labels_dict:
-    :type labels_dict: dict
-
-    :param n_iter:
-    :type n_iter:
-    :param embedding_dim:
-    :type embedding_dim:
-    :param batch_size:
-    :type batch_size:
-    :return:
-    :rtype:
-    """
     line_class = Line(train_graph=graph, batch_size=batch_size, embedding_dim=embedding_dim)
     line_class.run(n_iter)
     embeddings = line_class.fetch_embedding_as_dict()
@@ -124,7 +107,7 @@ def node2vec_node_classification(graph, labels, dataset, p, q):
     return
 
 # Construct graph given dataset with path in Google drive
-def construct_graph(dataset):
+def construct_graph(dataset, directed=False):
     if dataset=="BlogCatalog" or dataset=="blogcatalog" or dataset=="Blog_Catalog" or dataset=="blog_catalog":
         blog_edge_list = read_soc_edges("/content/drive/MyDrive/Datasets/soc-BlogCatalog-ASU.edges")
         blog_labels = read_soc_labels("/content/drive/MyDrive/Datasets/soc-BlogCatalog-ASU.node_labels")
@@ -144,15 +127,23 @@ def construct_graph(dataset):
     elif dataset=="Cora" or dataset=="cora":
         cora_edge_list = read_cora_edges("/content/drive/MyDrive/Datasets/out.subelj_cora_cora")
         cora_labels = read_cora_labels("/content/drive/MyDrive/Datasets/ent.subelj_cora_cora.class.name")
-        cora_graph = nx.Graph()
-        cora_graph.add_weighted_edges_from(cora_edge_list)
-        print("Returning Cora graph and labels")
-        return cora_graph, cora_labels
+        if directed == True:
+            cora_graph = nx.DiGraph()
+            cora_graph.add_weighted_edges_from(cora_edge_list)
+            print("Returning Cora directed graph")
+            return cora_graph
+        else:
+            cora_graph = nx.Graph()
+            cora_graph.add_weighted_edges_from(cora_edge_list)
+            print("Returning Cora graph and labels")
+            return cora_graph, cora_labels  
 
     elif dataset=="Reddit" or dataset=="reddit":
         reddit_adjlist = open("/content/drive/MyDrive/Datasets/reddit-adjlist.txt", 'rb')
         reddit_graph = nx.read_adjlist(reddit_adjlist, comments='#')
         reddit_labels = read_reddit_labels("/content/drive/MyDrive/Datasets/reddit-class_map.json")
+        #reddit_node_links =  read_reddit_links("/content/drive/MyDrive/Datasets/reddit-G.json")
+        #reddit_graph = nx.readwrite.json_graph.node_link_graph(reddit_node_links)
         print("Returning Reddit graph and labels")
         return reddit_graph, reddit_labels
     
@@ -179,6 +170,25 @@ def construct_graph(dataset):
         facebook_graph.add_weighted_edges_from(facebook_edge_list)
         print("Returning Facebook graph and labels")
         return facebook_graph, facebook_labels
+   
+    elif dataset=="Twitter" or dataset=="twitter":
+        twitter_edge_list = read_twitter_edges("/content/drive/MyDrive/Datasets/musae_facebook_edges.csv")
+        twitter_graph = nx.DiGraph()
+        twitter_graph.add_weighted_edges_from(ftwitter_edge_list)
+        print("Returning Twitter graph")
+        return twitter_graph 
+
+    elif dataset=="DBLP-Ci" or dataset=="dblp-ci":
+        print("Dataset not yet available, try again!")
+        
+        return None
+    elif dataset=="Epinion" or dataset=="epinion":
+        print("Dataset not yet available, try again!")
+        return None
+    
+    elif dataset=="DBLP-Au" or dataset=="dblp-au":
+        print("Dataset not yet available, try again!")
+        return None
             
     else:
         print("Incorrect dataset name, try again!")
