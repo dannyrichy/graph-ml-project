@@ -5,6 +5,8 @@ import networkx as nx
 
 from line.model import Line
 from netmf.model import NetMF
+from deepwalk.model import Deepwalk
+from node2vec.model import Node2Vec
 from utils import *
 
 
@@ -85,7 +87,37 @@ def netmf_node_classification(graph, labels, dataset, T, b=1, d=128, h=256, win_
     y = get_labels(graph.nodes(), labels)
     results = node_classifier(X, y)
     store_node_classify_results(results, X, y, dataset, f"{win_size}NetMF")
-    return 
+    return
+
+
+# Function for Node Classification using Deepwalk
+def deepwalk_node_classification(graph, labels, dataset):
+    embeddings = Deepwalk(graph)
+
+    X = []
+    y = []
+    for node in graph.nodes():
+        X.append(embeddings[node])
+        y.append(labels[node])
+
+    results = node_classifier(X, y)
+    store_node_classify_results(results, X, y, dataset, f"Deepwalk")
+    return
+
+
+# Function for Node Classification using Node2Vec
+def node2vec_node_classification(graph, labels, dataset, p, q):
+    embeddings = Node2Vec(graph, p, q)
+
+    X = []
+    y = []
+    for node in graph.nodes():
+        X.append(embeddings[node])
+        y.append(labels[node])
+
+    results = node_classifier(X, y)
+    store_node_classify_results(results, X, y, dataset, f"Node2Vec")
+    return
 
 
 def main():
@@ -146,43 +178,51 @@ def main():
     # BlogCatalog
     line_classification(blog_graph, blog_labels, "BlogCatalog")
     netmf_node_classification(blog_graph, blog_labels, "BlogCatalog", T=1)
-    netmf_node_classification(blog_graph, blog_labels, "BlogCatalog", T=5, win_size="large")    
+    netmf_node_classification(blog_graph, blog_labels, "BlogCatalog", T=5, win_size="large")
+    deepwalk_node_classification(blog_graph, blog_labels, "BlogCatalog")
+    node2vec_node_classification(blog_graph, blog_labels, "BlogCatalog", p=0.25, q=4)
     
     
     # PubMed
     line_classification(pub_graph, pub_labels, "PubMed")
     netmf_node_classification(pub_graph, pub_labels, "PubMed", T=1)
-    netmf_node_classification(pub_graph, pub_labels, "PubMed", T=5, win_size="large")   
+    netmf_node_classification(pub_graph, pub_labels, "PubMed", T=5, win_size="large")
+    deepwalk_node_classification(pub_graph, pub_labels, "PubMed")
+    node2vec_node_classification(pub_graph, pub_labels, "PubMed", p=0.25, q=0.25)
     
     
     # Flickr
     line_classification(flickr_graph, flickr_labels, "Flickr")
     netmf_node_classification(flickr_graph, flickr_labels, "Flickr", T=1, h=16389)
     netmf_node_classification(flickr_graph, flickr_labels, "Flickr", T=5, win_size="large", h=16389)
+    deepwalk_node_classification(flickr_graph, flickr_labels, "Flickr")
+    node2vec_node_classification(flickr_graph, flickr_labels, "Flickr", p=0.25, q=2)
     
     
     # Youtube
     line_classification(youtube_graph, youtube_labels, "Youtube")
     netmf_node_classification(youtube_raph, youtube_labels, "Youtube", T=1)
     netmf_node_classification(youtube_graph, youtube_labels, "Youtube", T=5, win_size="large")    
-    
+    deepwalk_node_classification(youtube_graph, youtube_labels, "Youtube")
+    node2vec_node_classification(youtube_graph, youtube_labels, "Youtube", p=0.25, q=4)
     
     # Cora
     line_classification(cora_graph, cora_labels, "Cora")
     netmf_node_classification(cora_graph, cora_labels, "Cora", T=1)
     netmf_node_classification(cora_graph, cora_labels, "Cora", T=5, win_size="large")
-    
+    deepwalk_node_classification(cora_graph, cora_labels, "Cora")
+    node2vec_node_classification(cora_graph, cora_labels, "Cora", p=0.25, q=4)
     
     # Reddit
     line_classification(reddit_graph, reddit_abels, "Reddit")
     netmf_node_classification(reddit_graph, reddit_labels, "Reddit", T=1)
     netmf_node_classification(reddit_graph, reddit_labels, "Reddit", T=5, win_size="large")   
-    
+    deepwalk_node_classification(reddit_graph, reddit_labels, "Reddit")
+    node2vec_node_classification(reddit_graph, reddit_labels, "Reddit", p=0.25, q=4)
     
     # Facebook
     line_classification(facebook_graph, facebook_labels, "Facebook")
     netmf_node_classification(facebook_graph, facebook_labels, "Facebook", T=1)
     netmf_node_classification(facebook_graph, facebook_labels, "Facebook", T=5, win_size="large")
-    
-    
-    
+    deepwalk_node_classification(facebook_graph, facebook_labels, "Facebook")
+    node2vec_node_classification(facebook_graph, facebook_labels, "Facebook", p=0.25, q=0.25)

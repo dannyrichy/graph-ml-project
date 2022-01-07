@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def get_paths(graph, strategy, walks_per_node=1, walk_length=6, p=1, q=1):
+def get_paths(graph, strategy, walks_per_node, walk_length, p, q):
     paths = []
 
     for _ in range(walks_per_node):
@@ -29,7 +29,7 @@ def node2vec_step(graph, previous_node, current_node, p, q):
     return next_node
 
 
-def node2vec_random_walk(graph, root_node, walk_length=6, p=1, q=1):
+def node2vec_random_walk(graph, root_node, walk_length, p, q):
     path = [root_node]
 
     while len(path) < walk_length:
@@ -38,5 +38,4 @@ def node2vec_random_walk(graph, root_node, walk_length=6, p=1, q=1):
         next_node = node2vec_step(graph, previous_node, current_node, p, q)
         path.append(next_node)
 
-    path = str(path)
     return path
