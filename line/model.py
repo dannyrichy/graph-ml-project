@@ -127,40 +127,31 @@ class Line(GraphHelper):
                     yield ([np.array(list(islice(shuffled_data[V1], *mini_batch_ixs))), np.array(list(islice(shuffled_data[V2], *mini_batch_ixs)))],
                            [np.array(list(islice(shuffled_data[LABEL], *mini_batch_ixs)))])
 
-    def evaluate(self, test_graph):
+    def evaluate(self, test_edges, labels):
         """
         To evaluate the model
-        :param test_graph:
-        :type test_graph: networkx.Graph
+        :param test_edges:
+        :type test_edges: list
+
+        :param labels:
+        :type labels: list
+
         :return:
         :rtype:
         """
-        edges_nx = test_graph.edges(data=True)
-        num_edges = test_graph.number_of_edges()
-        test_edges = [
-            (self.node_2_ix[u], self.node_2_ix[v])
-            for u, v, _ in edges_nx
-        ]
+        num_edges = len(test_edges)
+        labels[labels == 0] = -1.0
         data = {
             V1: list(),
             V2: list(),
             LABEL: list()
+
         }
         for i in range(num_edges):
-            v1, v2 = test_edges[i]
-            data[V1].append(v1)
-            data[V2].append(v2)
-            data[LABEL].append(1.0)
-
-            for _ in range(self.negative_ratio):
-                data[V1].append(v1)
-                while True:
-                    v3 = self.node_alias_sampling.alias_sample()
-                    if v3 != v2:
-                        break
-                data[V2].append(v3)
-                data[LABEL].append(-1.0)
-        print(self.model.evaluate(x=[np.array(data[V1]), np.array(data[V1])], y=[np.array(data[LABEL])]))
+            data[V1].append(test_edges[i][0])
+            data[V2].append(test_edges[i][1])
+            data[LABEL].append(labels[i])
+        print(self.model.evaluate(x=[test_edges[:, 0], test_edges[:, 1]], y=[labels]))
 
     def fetch_embedding_as_dict(self):
         """
