@@ -2,6 +2,7 @@ import logging
 import random
 
 import networkx as nx
+from stellargraph.data import EdgeSplitter
 
 from line.model import Line
 from netmf.model import NetMF
@@ -21,10 +22,12 @@ def prepare_train_test(graph):
     :return:
     :rtype:
     """
-    return random.sample([(u, v, weight['weight']) for u, v, weight in graph.edges(data=True)], int(0.25 * graph.number_of_edges()))
+    edge_splitter_test = EdgeSplitter(graph)
+    graph_test, examples_test, labels_test = edge_splitter_test.train_test_split(p=0.5, keep_connected=True)
+    return graph_test, examples_test, labels_test
 
 
-def line_predictor(train_graph, test_graph, n_iter=20, batch_size=1024):
+def line_predictor(graph, n_iter=20, batch_size=1024):
     """
     Link predictor for LINE model
 
@@ -43,9 +46,10 @@ def line_predictor(train_graph, test_graph, n_iter=20, batch_size=1024):
     :return:
     :rtype: None
     """
+    train_graph, test_test, labels = prepare_train_test(graph)
     l = Line(train_graph=train_graph, batch_size=batch_size)
     l.run(epochs=n_iter)
-    l.evaluate(test_graph)
+    l.evaluate(test_test, labels)
 
 
 def line_classification(graph, labels_dict, dataset, n_iter=20, embedding_dim=128, batch_size=1024):
@@ -163,7 +167,7 @@ def main():
     
     # Youtube
     line_classification(youtube_graph, youtube_labels, "Youtube")
-    netmf_node_classification(youtube_raph, youtube_labels, "Youtube", T=1)
+    netmf_node_classification(youtube_graph, youtube_labels, "Youtube", T=1)
     netmf_node_classification(youtube_graph, youtube_labels, "Youtube", T=5, win_size="large")    
     
     
@@ -174,7 +178,7 @@ def main():
     
     
     # Reddit
-    line_classification(reddit_graph, reddit_abels, "Reddit")
+    line_classification(reddit_graph, reddit_labels, "Reddit")
     netmf_node_classification(reddit_graph, reddit_labels, "Reddit", T=1)
     netmf_node_classification(reddit_graph, reddit_labels, "Reddit", T=5, win_size="large")   
     
