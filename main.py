@@ -23,16 +23,18 @@ def prepare_train_test(graph, directed=False):
     :rtype:
     """
     if directed:
+        graph_copy = graph.copy()
         edge_splitter_test = EdgeSplitter(graph.to_undirected())
-        train_graph, examples_test, labels_test = edge_splitter_test.train_test_split(p=0.5, keep_connected=True)
+        _, examples_test, labels_test = edge_splitter_test.train_test_split(p=0.5, keep_connected=True)
         for idx, edge in enumerate(examples_test[np.where(labels_test == 1)]):
             if not graph.has_edge(*tuple(edge)):
                 examples_test[idx] = np.flip(edge)
+        graph_copy.remove_edges_from(examples_test)
     else:
         edge_splitter_test = EdgeSplitter(graph)
-        train_graph, examples_test, labels_test = edge_splitter_test.train_test_split(p=0.5, keep_connected=True)
+        graph_copy, examples_test, labels_test = edge_splitter_test.train_test_split(p=0.5, keep_connected=True)
 
-    return train_graph, examples_test, labels_test
+    return graph_copy, examples_test, labels_test
 
 
 def line_predictor(graph, n_iter=20, batch_size=1024, directed=False):
@@ -56,25 +58,27 @@ def line_predictor(graph, n_iter=20, batch_size=1024, directed=False):
     line_predict.run(epochs=n_iter)
     y_pred = line_predict.predict(test_set)
     print("0 %:", link_prediction(y_pred=y_pred, y_true=labels))
-    test_set_50 = d_link_pred(test_set, labels, p=0.5)
+
+    test_set_50 = d_link_pred(graph, test_set, labels, p=0.5)
     y_pred = line_predict.predict(test_set_50)
     print("50 %:", link_prediction(y_pred=y_pred, y_true=labels))
-    test_set_100 = d_link_pred(test_set, labels, p=1.0)
+    test_set_100 = d_link_pred(graph, test_set, labels, p=1.0)
     y_pred = line_predict.predict(test_set_100)
     print("100 %:", link_prediction(y_pred=y_pred, y_true=labels))
 
-    
+
 # Function for Link Prediction using NetMF
 def netmf_link_prediction(graph, T, b=1, d=128, h=256, win_size="small"):
-    train_graph, test_edges, labels =  prepare_train_test(graph)
+    train_graph, test_edges, labels = prepare_train_test(graph)
+
     embedding = NetMF(graph, win_size, b=b, T=T, d=d, iter=10, h=h)
     nodelist = list(graph.nodes())
     Z = {nodelist[i]: embedding[i] for i in range(len(graph.nodes()))}
     y_pred = np.array([np.dot(Z[edge[0]], Z[edge[1]]) for edge in test_edges])
     print(f"{win_size}NetMF Link Prediction Score: {link_prediction(y_pred, labels)}")
     return
-    
-    
+
+
 # Function for Node Classification using LINE
 def line_classification(graph, labels_dict, dataset, n_iter=20, embedding_dim=128, batch_size=1024):
     line_class = Line(train_graph=graph, batch_size=batch_size, embedding_dim=embedding_dim)
@@ -243,9 +247,12 @@ def main():
     netmf_node_classification(graph, labels, dataset, T=5, win_size="large")
     deepwalk_node_classification(graph, labels, dataset)
     node2vec_node_classification(graph, labels, dataset, p=0.25, q=4)
-    
+
     # link prediction task
     netmf_link_prediction(graph, T=1)
     netmf_link_prediction(graph, T=5, win_size="large")
-    
-    
+
+    # link prediction task
+    netmf_link_prediction(graph, T=1)
+    netmf_link_prediction(graph, T=5, win_size="large")
+

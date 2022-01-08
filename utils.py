@@ -86,7 +86,7 @@ def read_facebook_labels(filename):
 def read_reddit_edges(filename):
     with open(filename, 'rb') as f:
         edge_list = pickle.load(f)
-        edge_list = [(u,v,1) for u,v in edge_list]
+    edge_list = [(u, v, 1) for u, v in edge_list]
     return edge_list
 
 
@@ -106,12 +106,12 @@ def node_classifier(x, y):
     return cv
 
 
-def d_link_pred(edges, labels, p=0.5):
-    """
+def d_link_pred(G, edges, labels, p=1):
+    '''
     edges: array([node, node], ....)
 
     labels:  array(0, 1, 0, 1.....)
-    """
+    '''
 
     mask = labels == 0
     neg_labels = labels[mask]
@@ -125,17 +125,20 @@ def d_link_pred(edges, labels, p=0.5):
     new_edges = edges.copy()
     # count = 0
     count_pos = 0
-
     indices = np.where(labels == 0)
-    for i in indices[:num_change]:
+
+    for i in indices[0][:num_change]:
         while True:
             temp = np.array([pos_edges[count_pos][1], pos_edges[count_pos][0]])
-            if temp not in pos_edges:
+            # print(temp)
+            ch = (temp[0], temp[1])
+            if not G.has_edge(*ch):
                 new_edges[i] = temp
+                count_pos += 1
                 break
             else:
                 count_pos += 1
-    return new_edges
+    return new_edges, labels
 
 
 # Link prediction(y_pred, y_true):
