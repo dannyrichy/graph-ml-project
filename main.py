@@ -58,6 +58,7 @@ def line_predictor(graph, n_iter=20, batch_size=1024, directed=False):
     line_predict.run(epochs=n_iter)
     y_pred = line_predict.predict(test_set)
     print("0 %:", link_prediction(y_pred=y_pred, y_true=labels))
+
     if directed:
         test_set_50 = d_link_pred(graph, test_set, labels, p=0.5)
         y_pred = line_predict.predict(test_set_50)
