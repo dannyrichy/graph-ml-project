@@ -162,11 +162,10 @@ def construct_graph(dataset, directed=False):
             return cora_graph, cora_labels
 
     elif dataset == "Reddit" or dataset == "reddit":
-        reddit_adjlist = open("/content/drive/MyDrive/Datasets/reddit-adjlist.txt", 'rb')
-        reddit_graph = nx.read_adjlist(reddit_adjlist, comments='#')
+        reddit_edge_list = read_reddit_edges("/content/drive/MyDrive/Datasets/reddit-G.pickle")
         reddit_labels = read_reddit_labels("/content/drive/MyDrive/Datasets/reddit-class_map.json")
-        # reddit_node_links =  read_reddit_links("/content/drive/MyDrive/Datasets/reddit-G.json")
-        # reddit_graph = nx.readwrite.json_graph.node_link_graph(reddit_node_links)
+        reddit_graph = nx.Graph()
+        reddit_graph.add_weighted_edges_from(reddit_edge_list)
         print("Returning Reddit graph and labels")
         return reddit_graph, reddit_labels
 
@@ -202,9 +201,12 @@ def construct_graph(dataset, directed=False):
         return twitter_graph
 
     elif dataset == "DBLP-Ci" or dataset == "dblp-ci":
-        print("Dataset not yet available, try again!")
+        dblpci_edge_list = read_edges("/content/drive/MyDrive/Datasets/cit-DBLP.edges", " ", 2)
+        dblpci_graph = nx.DiGraph()
+        dblpci_graph.add_weighted_edges_from(dblpci_edge_list)
+        print("Returning DBLP-Ci directed graph")
+        return dblpci_graph
 
-        return None
     elif dataset == "Epinion" or dataset == "epinion":
         epinion_edge_list = read_edges("/content/drive/MyDrive/Datasets/soc-Epinions1.mtx", " ", 2)
         epinion_graph = nx.DiGraph()

@@ -82,18 +82,19 @@ def read_facebook_labels(filename):
     return labels
 
 
+# read edges from Reddit
+def read_reddit_edges(filename):
+    with open(filename, 'rb') as f:
+        edge_list = pickle.load(f)
+        edge_list = [(u,v,1) for u,v in edge_list]
+    return edge_list
+
+
 # read labels from Reddit
 def read_reddit_labels(filename):
     with open(filename, 'r') as f:
         labels = json.load(f)
     return labels
-
-
-# read node links from Reddit
-def read_reddit_links(filename):
-    with open(filename, 'r') as f:
-        graph_data = json.load(f)
-    return graph_data
 
 
 # Logistic Regression - Node Classifer
