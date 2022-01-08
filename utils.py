@@ -86,7 +86,7 @@ def read_facebook_labels(filename):
 def read_reddit_edges(filename):
     with open(filename, 'rb') as f:
         edge_list = pickle.load(f)
-        edge_list = [(u, v, 1) for u, v in edge_list]
+    edge_list = [(u, v, 1) for u, v in edge_list]
     return edge_list
 
 
@@ -106,7 +106,7 @@ def node_classifier(x, y):
     return cv
 
 
-def d_link_pred(G, edges, labels, p=0.5):
+def d_link_pred(G, edges, labels, p=1):
     '''
     edges: array([node, node], ....)
 

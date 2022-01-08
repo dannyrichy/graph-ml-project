@@ -58,6 +58,7 @@ def line_predictor(graph, n_iter=20, batch_size=1024, directed=False):
     line_predict.run(epochs=n_iter)
     y_pred = line_predict.predict(test_set)
     print("0 %:", link_prediction(y_pred=y_pred, y_true=labels))
+
     test_set_50 = d_link_pred(graph, test_set, labels, p=0.5)
     y_pred = line_predict.predict(test_set_50)
     print("50 %:", link_prediction(y_pred=y_pred, y_true=labels))
@@ -69,6 +70,7 @@ def line_predictor(graph, n_iter=20, batch_size=1024, directed=False):
 # Function for Link Prediction using NetMF
 def netmf_link_prediction(graph, T, b=1, d=128, h=256, win_size="small"):
     train_graph, test_edges, labels = prepare_train_test(graph)
+
     embedding = NetMF(graph, win_size, b=b, T=T, d=d, iter=10, h=h)
     nodelist = list(graph.nodes())
     Z = {nodelist[i]: embedding[i] for i in range(len(graph.nodes()))}
@@ -249,3 +251,8 @@ def main():
     # link prediction task
     netmf_link_prediction(graph, T=1)
     netmf_link_prediction(graph, T=5, win_size="large")
+
+    # link prediction task
+    netmf_link_prediction(graph, T=1)
+    netmf_link_prediction(graph, T=5, win_size="large")
+
