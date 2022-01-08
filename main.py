@@ -14,7 +14,7 @@ logging.basicConfig(
     level=logging.INFO)
 
 
-def prepare_train_test(graph):
+def prepare_train_test(graph, directed=False):
     """
     Train test split
     :param graph:
@@ -22,12 +22,22 @@ def prepare_train_test(graph):
     :return:
     :rtype:
     """
-    edge_splitter_test = EdgeSplitter(graph)
-    graph_test, examples_test, labels_test = edge_splitter_test.train_test_split(p=0.5, keep_connected=True)
-    return graph_test, examples_test, labels_test
+    if directed:
+        graph_copy = graph.copy()
+        edge_splitter_test = EdgeSplitter(graph.to_undirected())
+        _, examples_test, labels_test = edge_splitter_test.train_test_split(p=0.5, keep_connected=True)
+        for idx, edge in enumerate(examples_test[np.where(labels_test == 1)]):
+            if not graph.has_edge(*tuple(edge)):
+                examples_test[idx] = np.flip(edge)
+        graph_copy.remove_edges_from(examples_test)
+    else:
+        edge_splitter_test = EdgeSplitter(graph)
+        graph_copy, examples_test, labels_test = edge_splitter_test.train_test_split(p=0.5, keep_connected=True)
+
+    return graph_copy, examples_test, labels_test
 
 
-def line_predictor(graph, n_iter=20, batch_size=1024):
+def line_predictor(graph, n_iter=20, batch_size=1024, directed=False):
     """
     Link predictor for LINE model
 
@@ -43,31 +53,32 @@ def line_predictor(graph, n_iter=20, batch_size=1024):
     :return:
     :rtype: None
     """
-    train_graph, test_test, labels = prepare_train_test(graph)
+    train_graph, test_set, labels = prepare_train_test(graph, directed)
     line_predict = Line(train_graph=train_graph, batch_size=batch_size)
     line_predict.run(epochs=n_iter)
-    y_pred = line_predict.predict(test_test)
-    print(link_prediction(y_pred=y_pred, y_true=labels))
+    y_pred = line_predict.predict(test_set)
+    print("0 %:", link_prediction(y_pred=y_pred, y_true=labels))
+    test_set_50 = d_link_pred(graph, test_set, labels, p=0.5)
+    y_pred = line_predict.predict(test_set_50)
+    print("50 %:", link_prediction(y_pred=y_pred, y_true=labels))
+    test_set_100 = d_link_pred(graph, test_set, labels, p=1.0)
+    y_pred = line_predict.predict(test_set_100)
+    print("100 %:", link_prediction(y_pred=y_pred, y_true=labels))
 
 
+# Function for Link Prediction using NetMF
+def netmf_link_prediction(graph, T, b=1, d=128, h=256, win_size="small"):
+    train_graph, test_edges, labels = prepare_train_test(graph)
+    embedding = NetMF(graph, win_size, b=b, T=T, d=d, iter=10, h=h)
+    nodelist = list(graph.nodes())
+    Z = {nodelist[i]: embedding[i] for i in range(len(graph.nodes()))}
+    y_pred = np.array([np.dot(Z[edge[0]], Z[edge[1]]) for edge in test_edges])
+    print(f"{win_size}NetMF Link Prediction Score: {link_prediction(y_pred, labels)}")
+    return
+
+
+# Function for Node Classification using LINE
 def line_classification(graph, labels_dict, dataset, n_iter=20, embedding_dim=128, batch_size=1024):
-    """
-
-
-    :param graph:
-    :type graph:
-    :param labels_dict:
-    :type labels_dict: dict
-
-    :param n_iter:
-    :type n_iter:
-    :param embedding_dim:
-    :type embedding_dim:
-    :param batch_size:
-    :type batch_size:
-    :return:
-    :rtype:
-    """
     line_class = Line(train_graph=graph, batch_size=batch_size, embedding_dim=embedding_dim)
     line_class.run(n_iter)
     embeddings = line_class.fetch_embedding_as_dict()
@@ -121,10 +132,10 @@ def node2vec_node_classification(graph, labels, dataset, p, q):
 
 
 # Construct graph given dataset with path in Google drive
-def construct_graph(dataset):
+def construct_graph(dataset, directed=False):
     if dataset == "BlogCatalog" or dataset == "blogcatalog" or dataset == "Blog_Catalog" or dataset == "blog_catalog":
-        blog_edge_list = read_soc_edges("/content/drive/MyDrive/Datasets/soc-BlogCatalog-ASU.edges")
-        blog_labels = read_soc_labels("/content/drive/MyDrive/Datasets/soc-BlogCatalog-ASU.node_labels")
+        blog_edge_list = read_edges("/content/drive/MyDrive/Datasets/soc-BlogCatalog-ASU.edges")
+        blog_labels = read_labels("/content/drive/MyDrive/Datasets/soc-BlogCatalog-ASU.node_labels")
         blog_graph = nx.Graph()
         blog_graph.add_weighted_edges_from(blog_edge_list)
         print("Returning Blog Catalog graph and labels")
@@ -139,31 +150,38 @@ def construct_graph(dataset):
         return pub_graph, pub_labels
 
     elif dataset == "Cora" or dataset == "cora":
-        cora_edge_list = read_cora_edges("/content/drive/MyDrive/Datasets/out.subelj_cora_cora")
+        cora_edge_list = read_edges("/content/drive/MyDrive/Datasets/out.subelj_cora_cora", " ", 2)
         cora_labels = read_cora_labels("/content/drive/MyDrive/Datasets/ent.subelj_cora_cora.class.name")
-        cora_graph = nx.Graph()
-        cora_graph.add_weighted_edges_from(cora_edge_list)
-        print("Returning Cora graph and labels")
-        return cora_graph, cora_labels
+        if directed == True:
+            cora_graph = nx.DiGraph()
+            cora_graph.add_weighted_edges_from(cora_edge_list)
+            print("Returning Cora directed graph")
+            return cora_graph
+        else:
+            cora_graph = nx.Graph()
+            cora_graph.add_weighted_edges_from(cora_edge_list)
+            print("Returning Cora graph and labels")
+            return cora_graph, cora_labels
 
     elif dataset == "Reddit" or dataset == "reddit":
-        reddit_adjlist = open("/content/drive/MyDrive/Datasets/reddit-adjlist.txt", 'rb')
-        reddit_graph = nx.read_adjlist(reddit_adjlist, comments='#')
+        reddit_edge_list = read_reddit_edges("/content/drive/MyDrive/Datasets/reddit-G.pickle")
         reddit_labels = read_reddit_labels("/content/drive/MyDrive/Datasets/reddit-class_map.json")
+        reddit_graph = nx.Graph()
+        reddit_graph.add_weighted_edges_from(reddit_edge_list)
         print("Returning Reddit graph and labels")
         return reddit_graph, reddit_labels
 
     elif dataset == "Flickr" or dataset == "flickr":
-        flickr_edge_list = read_soc_edges("/content/drive/MyDrive/Datasets/soc-Flickr-ASU.edges")
-        flickr_labels = read_soc_labels("/content/drive/MyDrive/Datasets/soc-Flickr-ASU.node_labels")
+        flickr_edge_list = read_edges("/content/drive/MyDrive/Datasets/soc-Flickr-ASU.edges")
+        flickr_labels = read_labels("/content/drive/MyDrive/Datasets/soc-Flickr-ASU.node_labels")
         flickr_graph = nx.Graph()
         flickr_graph.add_weighted_edges_from(flickr_edge_list)
         print("Returning Flickr graph and labels")
         return flickr_graph, flickr_labels
 
     elif dataset == "Youtube" or dataset == "YouTube" or dataset == "youtube":
-        youtube_edge_list = read_soc_edges("/content/drive/MyDrive/Datasets/soc-YouTube-ASU.edges")
-        youtube_labels = read_soc_labels("/content/drive/MyDrive/Datasets/soc-YouTube-ASU.node_labels")
+        youtube_edge_list = read_edges("/content/drive/MyDrive/Datasets/soc-YouTube-ASU.edges")
+        youtube_labels = read_labels("/content/drive/MyDrive/Datasets/soc-YouTube-ASU.node_labels")
         youtube_graph = nx.Graph()
         youtube_graph.add_weighted_edges_from(youtube_edge_list)
         print("Returning Youtube graph and labels")
@@ -176,6 +194,31 @@ def construct_graph(dataset):
         facebook_graph.add_weighted_edges_from(facebook_edge_list)
         print("Returning Facebook graph and labels")
         return facebook_graph, facebook_labels
+
+    elif dataset == "Twitter" or dataset == "twitter":
+        twitter_edge_list = read_edges("/content/drive/MyDrive/Datasets/out.munmun_twitter_social", " ", 2)
+        twitter_graph = nx.DiGraph()
+        twitter_graph.add_weighted_edges_from(twitter_edge_list)
+        print("Returning Twitter directed graph")
+        return twitter_graph
+
+    elif dataset == "DBLP-Ci" or dataset == "dblp-ci":
+        dblpci_edge_list = read_edges("/content/drive/MyDrive/Datasets/cit-DBLP.edges", " ", 2)
+        dblpci_graph = nx.DiGraph()
+        dblpci_graph.add_weighted_edges_from(dblpci_edge_list)
+        print("Returning DBLP-Ci directed graph")
+        return dblpci_graph
+
+    elif dataset == "Epinion" or dataset == "epinion":
+        epinion_edge_list = read_edges("/content/drive/MyDrive/Datasets/soc-Epinions1.mtx", " ", 2)
+        epinion_graph = nx.DiGraph()
+        epinion_graph.add_weighted_edges_from(epinion_edge_list)
+        print("Returning Epinion directed graph")
+        return epinion_graph
+
+    elif dataset == "DBLP-Au" or dataset == "dblp-au":
+        print("Dataset not yet available, try again!")
+        return None
 
     else:
         print("Incorrect dataset name, try again!")
@@ -191,93 +234,18 @@ def main():
     :rtype:
     """
 
+    # read and construct data
+    dataset = "Cora"
+    graph, labels = construct_graph(dataset)
+    print(f"Directed:{nx.is_directed(graph)}, Edges:{graph.number_of_edges()}, Nodes: {graph.number_of_nodes()}, Labels: {len(labels)}")
 
-##### READ and CONSTRUCT all DATATSETS #####
+    # node classification task
+    line_classification(graph, labels, dataset)
+    netmf_node_classification(graph, labels, dataset, T=1)
+    netmf_node_classification(graph, labels, dataset, T=5, win_size="large")
+    deepwalk_node_classification(graph, labels, dataset)
+    node2vec_node_classification(graph, labels, dataset, p=0.25, q=4)
 
-# BlogCatalog
-blog_edge_list = read_soc_edges("/content/drive/MyDrive/Datasets/soc-BlogCatalog-ASU.edges")
-blog_labels = read_soc_labels("/content/drive/MyDrive/Datasets/soc-BlogCatalog-ASU.node_labels")
-blog_graph = nx.Graph()
-blog_graph.add_weighted_edges_from(blog_edge_list)
-
-# PubMed
-pub_edge_list = read_pub_med_edges("/content/drive/MyDrive/Datasets/Pubmed-Diabetes.DIRECTED.cites.tab")
-pub_labels = read_pub_med_labels("/content/drive/MyDrive/Datasets/Pubmed-Diabetes.NODE.paper.tab")
-pub_graph = nx.Graph()
-pub_graph.add_weighted_edges_from(pub_edge_list)
-
-# Flickr
-flickr_edge_list = read_soc_edges("/content/drive/MyDrive/Datasets/soc-Flickr-ASU.edges")
-flickr_labels = read_soc_labels("/content/drive/MyDrive/Datasets/soc-Flickr-ASU.node_labels")
-flickr_graph = nx.Graph()
-flickr_graph.add_weighted_edges_from(flickr_edge_list)
-
-# Youtube
-youtube_edge_list = read_soc_edges("/content/drive/MyDrive/Datasets/soc-YouTube-ASU.edges")
-youtube_labels = read_soc_labels("/content/drive/MyDrive/Datasets/soc-YouTube-ASU.node_labels")
-youtube_graph = nx.Graph()
-youtube_graph.add_weighted_edges_from(youtube_edge_list)
-
-# Cora
-cora_edge_list = read_cora_edges("/content/drive/MyDrive/Datasets/out.subelj_cora_cora")
-cora_labels = read_cora_labels("/content/drive/MyDrive/Datasets/ent.subelj_cora_cora.class.name")
-cora_graph = nx.Graph()
-cora_graph.add_weighted_edges_from(cora_edge_list)
-
-# Reddit
-reddit_adjlist = open("/content/drive/MyDrive/Datasets/reddit-adjlist.txt", 'rb')
-reddit_graph = nx.read_adjlist(reddit_adjlist, comments='#')
-reddit_labels = read_reddit_labels("/content/drive/MyDrive/Datasets/reddit-class_map.json")
-
-# Facebook
-facebook_edge_list = read_facebook_edges("/content/drive/MyDrive/Datasets/musae_facebook_edges.csv")
-facebook_labels = read_facebook_labels("/content/drive/MyDrive/Datasets/musae_facebook_target.csv")
-facebook_graph = nx.Graph()
-facebook_graph.add_weighted_edges_from(facebook_edge_list)
-
-##### NODE CLASSIFICATION #####
-
-# BlogCatalog
-line_classification(blog_graph, blog_labels, "BlogCatalog")
-netmf_node_classification(blog_graph, blog_labels, "BlogCatalog", T=1)
-netmf_node_classification(blog_graph, blog_labels, "BlogCatalog", T=5, win_size="large")
-
-# PubMed
-line_classification(pub_graph, pub_labels, "PubMed")
-netmf_node_classification(pub_graph, pub_labels, "PubMed", T=1)
-netmf_node_classification(pub_graph, pub_labels, "PubMed", T=5, win_size="large")
-
-# Flickr
-line_classification(flickr_graph, flickr_labels, "Flickr")
-netmf_node_classification(flickr_graph, flickr_labels, "Flickr", T=1, h=16389)
-netmf_node_classification(flickr_graph, flickr_labels, "Flickr", T=5, win_size="large", h=16389)
-
-# Youtube
-line_classification(youtube_graph, youtube_labels, "Youtube")
-netmf_node_classification(youtube_graph, youtube_labels, "Youtube", T=1)
-netmf_node_classification(youtube_graph, youtube_labels, "Youtube", T=5, win_size="large")
-
-# Cora
-line_classification(cora_graph, cora_labels, "Cora")
-netmf_node_classification(cora_graph, cora_labels, "Cora", T=1)
-netmf_node_classification(cora_graph, cora_labels, "Cora", T=5, win_size="large")
-
-# Reddit
-line_classification(reddit_graph, reddit_labels, "Reddit")
-netmf_node_classification(reddit_graph, reddit_labels, "Reddit", T=1)
-netmf_node_classification(reddit_graph, reddit_labels, "Reddit", T=5, win_size="large")
-
-# Facebook
-line_classification(facebook_graph, facebook_labels, "Facebook")
-netmf_node_classification(facebook_graph, facebook_labels, "Facebook", T=1)
-netmf_node_classification(facebook_graph, facebook_labels, "Facebook", T=5, win_size="large")
-# read and construct data
-dataset = "Cora"
-graph, labels = construct_graph(dataset)
-
-# node classification task
-line_classification(graph, labels, dataset)
-netmf_node_classification(graph, labels, dataset, T=1)
-netmf_node_classification(graph, labels, dataset, T=5, win_size="large")
-deepwalk_node_classification(graph, labels, dataset)
-node2vec_node_classification(graph, labels, dataset, p=0.25, q=4)
+    # link prediction task
+    netmf_link_prediction(graph, T=1)
+    netmf_link_prediction(graph, T=5, win_size="large")
