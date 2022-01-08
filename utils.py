@@ -113,32 +113,18 @@ def d_link_pred(G, edges, labels, p=1):
     labels:  array(0, 1, 0, 1.....)
     '''
 
-    mask = labels == 0
-    neg_labels = labels[mask]
+    pos_edges = list(edges[labels == 1])
+    num_change = int(len(labels[labels == 0]) * p)
 
-    mask_inv = labels == 1
-    pos_labels = labels[mask_inv]
-    pos_edges = edges[mask_inv]
-
-    num_change = int(len(neg_labels) * p)
-
-    new_edges = edges.copy()
-    # count = 0
-    count_pos = 0
     indices = np.where(labels == 0)
-
-    for i in indices[0][:num_change]:
-        while True:
-            temp = np.array([pos_edges[count_pos][1], pos_edges[count_pos][0]])
-            # print(temp)
-            ch = (temp[0], temp[1])
-            if not G.has_edge(*ch):
-                new_edges[i] = temp
-                count_pos += 1
-                break
-            else:
-                count_pos += 1
-    return new_edges, labels
+    modified_edges = edges.copy()
+    ix = 0
+    while ix < num_change and len(pos_edges) != 0:
+        edge_tmp = np.flip(pos_edges.pop())
+        if not G.has_edge(edge_tmp[0], edge_tmp[1]):
+            modified_edges[indices[0][ix]] = edge_tmp
+            ix += 1
+    return modified_edges, labels
 
 
 # Link prediction(y_pred, y_true):
